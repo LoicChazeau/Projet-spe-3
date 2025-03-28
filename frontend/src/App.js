@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import logo from './Assets/logo.svg';
+import logo from './assets/logo.svg';
 import './App.css';
 import Auth from './Components/Auth';
+import Home from './Components/Home';
 
 function HomePage() {
   return (
@@ -12,7 +13,10 @@ function HomePage() {
         Salut les bouffons !  <br/> Je vous fait les pages en dessous après vous vous demerdez à les connecter entre elles
       </p>
       <Link className="App-link" to="/login">
-        Aller à la page de connexion
+        Connexion
+      </Link>
+      <Link className="App-link" to="/login">
+        Home
       </Link>
     </header>
   );
@@ -24,6 +28,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/login" element={<Auth />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/" element={<HomePage />} />
         </Routes>
       </div>
