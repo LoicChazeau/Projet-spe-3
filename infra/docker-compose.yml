@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+
+  dev:
+    build:
+      context: .
+      dockerfile: dev/Dockerfile.dev
+    volumes:
+      - ../:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    tty: true
+
+  front-end:
+    build: ../workspace/front-end
+    ports:
+      - "3000:80"
+  
+  gateway:
+    build: ../workspace/gateway
+    ports:
+      - "8000:8000"
+  
+  essayage:
+    build: ../workspace/essayage
+    ports:
+      - "8001:8001"
+  
+  recommandation:
+    build: ../workspace/recommandation
+    ports:
+      - "8002:8002"
+  
+  portainer:
+    image: portainer/portainer-ce:latest
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - "9000:9000"
+
+volumes:
+  portainer_data:
