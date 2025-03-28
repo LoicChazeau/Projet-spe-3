@@ -10,7 +10,7 @@ function HomePage() {
     <header className="App-header">
       <img src={logo} className="App-logo" alt="logo" />
       <p>
-        Salut les bouffons !  <br/> Je vous fait les pages en dessous après vous vous demerdez à les connecter entre elles
+        Bvn sur notre application ! 
       </p>
       <Link className="App-link" to="/login">
         Connexion
