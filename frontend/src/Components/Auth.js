@@ -1,7 +1,7 @@
 import React from 'react';
 import '../App.css'; // Remonte d'un niveau
 import './Auth.css';
-import logo from '../Assets/logo.svg'; // Si votre logo est dans src
+import logo from '../assets/logo.svg'; // Si votre logo est dans src
 
 
 
