@@ -5,6 +5,21 @@ import cv2
 from ..models.face import FaceLandmarks, Point2D, Point3D, GlassesPosition
 
 class FaceDetectorService:
+    # Points clés pour les lunettes (indices des points MediaPipe)
+    # Points des yeux
+    LEFT_EYE_OUTER = 33  # Coin extérieur de l'œil gauche
+    LEFT_EYE_INNER = 133  # Coin intérieur de l'œil gauche
+    RIGHT_EYE_OUTER = 263  # Coin extérieur de l'œil droit
+    RIGHT_EYE_INNER = 362  # Coin intérieur de l'œil droit
+    
+    # Points du nez
+    NOSE_BRIDGE = 168  # Pont du nez (haut)
+    NOSE_TIP = 1  # Bout du nez
+    
+    # Points des tempes
+    LEFT_TEMPLE = 447  # Temple gauche
+    RIGHT_TEMPLE = 227  # Temple droit
+
     def __init__(self):
         self.face_mesh = mp.solutions.face_mesh.FaceMesh(
             static_image_mode=False,  # False pour un meilleur suivi en temps réel
@@ -63,32 +78,63 @@ class FaceDetectorService:
         """
         Calcule la position, rotation et échelle des lunettes basées sur les points du visage.
         """
-        # Points clés pour les lunettes (indices des points MediaPipe)
-        LEFT_EYE = 33  # Point extérieur de l'œil gauche
-        RIGHT_EYE = 263  # Point extérieur de l'œil droit
-        NOSE_TIP = 1  # Bout du nez
-        
         # Extraire les points clés
-        left_eye = face_landmarks[LEFT_EYE]
-        right_eye = face_landmarks[RIGHT_EYE]
-        nose = face_landmarks[NOSE_TIP]
+        left_eye_outer = face_landmarks[self.LEFT_EYE_OUTER]
+        left_eye_inner = face_landmarks[self.LEFT_EYE_INNER]
+        right_eye_outer = face_landmarks[self.RIGHT_EYE_OUTER]
+        right_eye_inner = face_landmarks[self.RIGHT_EYE_INNER]
+        nose_bridge = face_landmarks[self.NOSE_BRIDGE]
+        nose_tip = face_landmarks[self.NOSE_TIP]
+        left_temple = face_landmarks[self.LEFT_TEMPLE]
+        right_temple = face_landmarks[self.RIGHT_TEMPLE]
         
-        # Calculer la position (centre entre les yeux)
-        pos_x = (left_eye.x + right_eye.x) / 2
-        pos_y = (left_eye.y + right_eye.y) / 2
-        pos_z = (left_eye.z + right_eye.z) / 2
+        print("Face landmarks extracted successfully")
         
-        # Calculer la rotation (basée sur l'angle entre les yeux)
-        dx = right_eye.x - left_eye.x
-        dy = right_eye.y - left_eye.y
-        rotation_z = np.arctan2(dy, dx)
+        # Calculer le centre des yeux
+        left_eye_center_x = (left_eye_outer.x + left_eye_inner.x) / 2
+        left_eye_center_y = (left_eye_outer.y + left_eye_inner.y) / 2
+        right_eye_center_x = (right_eye_outer.x + right_eye_inner.x) / 2
+        right_eye_center_y = (right_eye_outer.y + right_eye_inner.y) / 2
         
-        # Calculer l'échelle (basée sur la distance entre les yeux)
-        eye_distance = np.sqrt(dx**2 + dy**2) * width  # Convertir en pixels
-        scale = eye_distance / 100  # Normaliser par rapport à une taille de référence
+        # Position : centre entre les yeux, légèrement ajusté vers le pont du nez
+        pos_x = (left_eye_center_x + right_eye_center_x) / 2
+        eye_center_y = (left_eye_center_y + right_eye_center_y) / 2
+        pos_y = eye_center_y + (nose_bridge.y - eye_center_y) * 0.1
+        pos_z = nose_bridge.z
+        
+        print(f"Calculated position: x={pos_x}, y={pos_y}, z={pos_z}")
+        
+        # Rotation
+        # Angle horizontal (yaw) basé sur la différence de profondeur entre les tempes
+        rotation_y = np.arctan2(right_temple.z - left_temple.z, right_temple.x - left_temple.x)
+        
+        # Angle vertical (pitch) basé sur l'angle entre le pont du nez et le bout du nez
+        dx_nose = nose_tip.x - nose_bridge.x
+        dy_nose = nose_tip.y - nose_bridge.y
+        dz_nose = nose_tip.z - nose_bridge.z
+        rotation_x = np.arctan2(dy_nose, np.sqrt(dx_nose**2 + dz_nose**2))
+        
+        # Angle de rotation (roll) basé sur l'angle entre les yeux
+        dx_eyes = right_eye_center_x - left_eye_center_x
+        dy_eyes = right_eye_center_y - left_eye_center_y
+        rotation_z = np.arctan2(dy_eyes, dx_eyes)
+        
+        print(f"Calculated rotation: x={rotation_x}, y={rotation_y}, z={rotation_z}")
+        
+        # Échelle
+        # Distance entre les yeux pour la largeur
+        eye_distance = np.sqrt(dx_eyes**2 + dy_eyes**2) * width
+        # Distance verticale pour la hauteur
+        eye_height = abs(nose_bridge.y - nose_tip.y) * height * 0.5
+        
+        scale_x = eye_distance / 100  # Largeur
+        scale_y = eye_height / 50    # Hauteur
+        scale_z = (scale_x + scale_y) / 2  # Profondeur moyenne
+        
+        print(f"Calculated scale: x={scale_x}, y={scale_y}, z={scale_z}")
         
         return GlassesPosition(
             position=Point3D(x=pos_x * width, y=pos_y * height, z=pos_z * 1000),
-            rotation=Point3D(x=0, y=0, z=rotation_z),
-            scale=Point3D(x=scale, y=scale, z=scale)
+            rotation=Point3D(x=rotation_x, y=rotation_y, z=rotation_z),
+            scale=Point3D(x=scale_x, y=scale_y, z=scale_z)
         ) 
