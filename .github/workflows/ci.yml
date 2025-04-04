@@ -74,4 +74,5 @@ jobs:
           title: "Auto PR: Merge develop into main"
           body: "All tests passed on develop. This PR is automatically generated."
           base: main
-          branch: develop
+          branch: feature/auto-pr-develop-to-main
+          delete-branch: true
