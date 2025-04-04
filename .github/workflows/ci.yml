@@ -19,7 +19,7 @@ jobs:
       - name: Build Docker images
         run: |
           cd infra
-          docker-compose up --build -d
+          docker compose up --build -d
           
       - name: Run test front-end
         run: docker exec infra-front-end-1 curl -f http://localhost:80 || exit 1
