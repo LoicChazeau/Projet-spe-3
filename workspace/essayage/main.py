@@ -1,34 +1,30 @@
 from fastapi import FastAPI
-import cv2
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+from app.routers import face_detection
 
-# Initialiser la capture vidéo depuis la webcam (indice 0)
-cap = cv2.VideoCapture(0)
+app = FastAPI(
+    title="Service Essayage",
+    description="API pour l'essayage virtuel de lunettes avec détection faciale en temps réel",
+    version="1.0.0"
+)
 
-# Définir la largeur et la hauteur du cadre (facultatif)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+# Configuration CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # A modifier en production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-while True:
-    # Capturer image par image
-    ret, frame = cap.read()
+# Inclusion des routers
+app.include_router(face_detection.router, prefix="/api/v1/face", tags=["Face Detection"])
 
-    if not ret:
-        print("Erreur lors de la capture de l'image")
-        break
-
-    # Afficher l'image capturée
-    cv2.imshow('Flux vidéo', frame)
-
-    # Quitter la boucle si la touche 'q' est enfoncée
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-# Libérer la capture et fermer les fenêtres
-cap.release()
-cv2.destroyAllWindows()
-
-@app.get("/")
+@app.get("/", tags=["Health Check"])
 def read_root():
-    return {"message": "Service Essayage is up!"}
+    return {
+        "status": "healthy",
+        "service": "Essayage API",
+        "version": "1.0.0"
+    }
