@@ -7,21 +7,27 @@ from ..models.face import FaceLandmarks, Point2D, Point3D, GlassesPosition
 class FaceDetectorService:
     def __init__(self):
         self.face_mesh = mp.solutions.face_mesh.FaceMesh(
-            static_image_mode=True,
+            static_image_mode=False,  # False pour un meilleur suivi en temps réel
             max_num_faces=1,
             min_detection_confidence=0.5,
+            min_tracking_confidence=0.5,  # Ajouté pour le temps réel
             refine_landmarks=True
         )
 
     async def detect_landmarks(self, image: UploadFile) -> tuple[FaceLandmarks, GlassesPosition]:
         """
-        Détecte les points de repère du visage et calcule la position des lunettes.
+        Détecte les points de repère du visage à partir d'un fichier uploadé.
         """
         # Lire l'image
         contents = await image.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
+        return self.process_image(img)
+
+    def process_image(self, img: np.ndarray) -> tuple[FaceLandmarks, GlassesPosition]:
+        """
+        Traite une image numpy et retourne les landmarks et la position des lunettes.
+        """
         # Convertir en RGB pour MediaPipe
         rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         height, width = rgb_image.shape[:2]
