@@ -26,13 +26,9 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Build Docker images
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: false
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-          load: true
+        run: |
+          cd infra
+          docker compose build --cache-from type=local,src=/tmp/.buildx-cache --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max
 
       - name: Move cache
         run: |
