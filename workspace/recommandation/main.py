@@ -12,10 +12,17 @@ from sqlalchemy.orm import Session
 from database import get_db, Glasses, Style
 
 # Configuration du logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(
+    title="Service de Recommandation de Lunettes",
+    description="Service qui analyse la forme du visage et recommande des lunettes adaptées",
+    version="1.0.0"
+)
 
 # Configuration CORS
 app.add_middleware(
@@ -27,7 +34,12 @@ app.add_middleware(
 )
 
 # Modèle de détection de visage
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+try:
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    logger.info("Modèle de détection de visage chargé avec succès")
+except Exception as e:
+    logger.error(f"Erreur lors du chargement du modèle de détection de visage: {str(e)}")
+    raise
 
 def convert_to_python_types(obj: Any) -> Any:
     """Convertit les types numpy en types Python standard."""
@@ -238,8 +250,15 @@ def recommend_glasses(face_analysis: Dict[str, Any], db: Session) -> List[Dict[s
         logger.error(f"Erreur lors de la génération des recommandations: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/analyze")
-async def analyze_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
+@app.post("/analyze", 
+    summary="Analyse une image de visage et recommande des lunettes",
+    description="Cet endpoint analyse une image de visage pour déterminer sa forme et recommande des lunettes adaptées.",
+    response_description="Retourne l'analyse du visage et les recommandations de lunettes"
+)
+async def analyze_image(
+    file: UploadFile = File(..., description="Image du visage à analyser (format JPEG ou PNG)"),
+    db: Session = Depends(get_db)
+):
     """Endpoint pour analyser une image et recommander des lunettes."""
     try:
         logger.info(f"Réception d'une image: {file.filename}")
