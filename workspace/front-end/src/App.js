@@ -2,10 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import logo from './assets/logo.svg';
 import './App.css';
-import Auth from './Components/Auth';
-import Home from './Components/Home';
-import Lia from './Components/TryOnPage'
+import Auth from './components/Auth';
+import Home from './components/Home';
+import Lia from './components/TryOnPage'
 import VideoTest from './pages/VideoTest';
+import ModelTest from './pages/ModelTest';
 
 function HomePage() {
   return (
@@ -26,6 +27,9 @@ function HomePage() {
       <Link className="App-link" to="/video-test">
         Test Vidéo
       </Link>
+      <Link className="App-link" to="/model-test">
+        Test Modèle 3D
+      </Link>
     </header>
   );
 }
@@ -39,6 +43,7 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/lia" element={<Lia />} />
           <Route path="/video-test" element={<VideoTest />} />
+          <Route path="/model-test" element={<ModelTest />} />
           <Route path="/" element={<HomePage />} />
         </Routes>
       </div>
