@@ -2,17 +2,28 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 import os
-from dotenv import load_dotenv
+import logging
 
-load_dotenv()
+# Configuration du logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Configuration de la base de données
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/optic_db")
+# Configuration de la base de données SQLite
+DATABASE_URL = "sqlite:///./optic_db.sqlite"
 
-# Création du moteur de base de données
-engine = create_engine(DATABASE_URL)
+try:
+    # Création du moteur de base de données
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        echo=True  # Active les logs SQL
+    )
+    logger.info(f"Connexion à la base de données établie avec succès: {DATABASE_URL}")
+except Exception as e:
+    logger.error(f"Erreur lors de la connexion à la base de données: {str(e)}")
+    raise
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
 
 # Table de liaison pour les styles
@@ -40,8 +51,13 @@ class Style(Base):
     name = Column(String, nullable=False, unique=True)
     glasses = relationship("Glasses", secondary=glasses_styles, back_populates="styles")
 
-# Création des tables
-Base.metadata.create_all(bind=engine)
+try:
+    # Création des tables
+    Base.metadata.create_all(bind=engine)
+    logger.info("Tables créées avec succès")
+except Exception as e:
+    logger.error(f"Erreur lors de la création des tables: {str(e)}")
+    raise
 
 # Fonction pour obtenir une session de base de données
 def get_db():
