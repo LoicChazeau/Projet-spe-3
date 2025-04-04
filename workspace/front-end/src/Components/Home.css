@@ -41,6 +41,7 @@
   
   .banner-button {
     background-color: #007bff;
+    text-decoration: none;
     color: #fff;
     border: none;
     padding: 0.75rem 1.5rem;

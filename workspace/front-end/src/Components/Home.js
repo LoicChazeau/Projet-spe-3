@@ -1,11 +1,12 @@
 import React from 'react';
 import './Home.css';
+import { Link } from 'react-router-dom';
 import woman_sunglasses from '../assets/woman-sunglasses.jpeg';
 import oakleyLogo from '../assets/logo_oakley.svg';
 import raybanLogo from '../assets/logo_ray-ban.svg';
 import pradaLogo from '../assets/logo_prada.svg';
 import gucciLogo from '../assets/logo_gucci.svg';
-import glasses from '../assets/Lunettes_LUKKAS.svg';
+import glasses from '../assets/Lunettes_LUKKAS.png';
 
 // Exemple de données (logos, produits)
 const brandLogos = [
@@ -87,7 +88,9 @@ function Home() {
         />
         <div className="banner-text">
           <h2 className="banner-title">Trouvez la monture qui vous ressemble</h2>
-          <button className="banner-button">Essayer Lia</button>
+          <Link to="/lia" className="banner-button">
+            Essayer Lia
+          </Link>
         </div>
       </div>
 
@@ -132,7 +135,7 @@ function Home() {
           {newArrivals.map((product, index) => (
             <div key={index} className="product-card">
               <img
-                src={product.image}
+                src={glasses}
                 alt={`${product.brand} ${product.model}`}
                 className="product-image"
               />
