@@ -22,6 +22,18 @@ jobs:
           cd infra
           docker compose up --build -d
           
+      - name: Wait for gateway to be ready
+        run: |
+          for i in {1..10}; do
+            if docker exec infra-gateway-1 curl -f http://localhost:8000; then
+              echo "Gateway is ready";
+              exit 0;
+            fi;
+            echo "Gateway not ready, waiting 5 seconds...";
+            sleep 5;
+          done;
+          exit 1
+          
       - name: Run test front-end
         run: docker exec infra-front-end-1 curl -f http://localhost:80 || exit 1
       - name: Run test gateway
