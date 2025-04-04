@@ -1,0 +1,4 @@
+FROM docker:20.10
+RUN apk update && apk add --no-cache make bash
+WORKDIR /workspace
+CMD ["bash"]

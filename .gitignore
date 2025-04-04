@@ -199,3 +199,17 @@ yarn-error.log*
 *.ntvs*
 *.njsproj
 *.sln
+
+# Ignorer node_modules pour le front-end
+workspace/front-end/node_modules
+workspace/front-end/build
+
+# Fichiers de logs et d'environnement
+**/npm-debug.log*
+**/yarn-error.log*
+**/.env
+
+# Dossiers d'IDE
+.vscode
+.idea
+.DS_Store
