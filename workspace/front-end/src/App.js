@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import FaceShapePage from './components/FaceShapePage';
 import WebGLTest from './pages/WebGLTest';
 import GltfTest from './pages/GltfTest';
+import WebGLVideoTest from './pages/WebGLVideoTest';
 
 function HomePage() {
   return (
@@ -43,6 +44,9 @@ function HomePage() {
       <Link className="App-link" to="/gltf-test">
         Test GLTF
       </Link>
+      <Link className="App-link" to="/webgl-video-test">
+        Test Video WebGL
+      </Link>
     </header>
   );
 }
@@ -60,6 +64,7 @@ function App() {
           <Route path="/model-test" element={<ModelTest />} />
           <Route path="/webgl-test" element={<WebGLTest />} />
           <Route path="/gltf-test" element={<GltfTest />} />
+          <Route path="/webgl-video-test" element={<WebGLVideoTest />} />
           <Route path="/" element={<HomePage />} />
           <Route path="/home" element={
             <ProtectedRoute>
