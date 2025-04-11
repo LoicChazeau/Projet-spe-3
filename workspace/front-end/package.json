@@ -21,7 +21,6 @@
     "web-vitals": "^2.1.4",
     "firebase": "^10.8.0",
     "react-firebase-hooks": "^5.1.1"
-    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
