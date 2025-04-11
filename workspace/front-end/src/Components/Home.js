@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
-import Modal from './Modal';
+import Modal from '../components/Modal';
 import './Home.css';
 import woman_sunglasses from '../assets/woman-sunglasses.jpeg';
 import oakleyLogo from '../assets/logo_oakley.svg';
