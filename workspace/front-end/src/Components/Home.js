@@ -1,4 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
 import './Home.css';
 import woman_sunglasses from '../assets/woman-sunglasses.jpeg';
 import oakleyLogo from '../assets/logo_oakley.svg';
@@ -76,8 +79,27 @@ const newArrivals = [
 ];
 
 function Home() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
+  };
+
   return (
     <div className="home-page">
+      {/* Bouton de déconnexion */}
+      <button 
+        onClick={handleLogout}
+        className="logout-button"
+      >
+        Déconnexion
+      </button>
+
       {/* Top Banner */}
       <div className="top-banner">
         <img

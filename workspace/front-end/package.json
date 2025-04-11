@@ -14,7 +14,8 @@
     "three": "^0.162.0",
     "@types/three": "^0.162.0",
     "web-vitals": "^2.1.4",
-    "firebase": "^10.8.0"
+    "firebase": "^10.8.0",
+    "react-firebase-hooks": "^5.1.1"
   },
   "scripts": {
     "start": "react-scripts start",

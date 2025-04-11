@@ -7,28 +7,17 @@ import Home from './components/Home';
 import Lia from './components/TryOnPage'
 import VideoTest from './pages/VideoTest';
 import ModelTest from './pages/ModelTest';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function HomePage() {
   return (
     <header className="App-header">
       <img src={logo} className="App-logo" alt="logo" />
       <p>
-        Bvn sur notre application ! 
+        Bienvenue sur notre application ! 
       </p>
       <Link className="App-link" to="/login">
         Connexion
-      </Link>
-      <Link className="App-link" to="/home">
-        Home
-      </Link>
-      <Link className="App-link" to="/lia">
-        Lia
-      </Link>
-      <Link className="App-link" to="/video-test">
-        Test Vidéo
-      </Link>
-      <Link className="App-link" to="/model-test">
-        Test Modèle 3D
       </Link>
     </header>
   );
@@ -40,11 +29,27 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/login" element={<Auth />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/lia" element={<Lia />} />
-          <Route path="/video-test" element={<VideoTest />} />
-          <Route path="/model-test" element={<ModelTest />} />
           <Route path="/" element={<HomePage />} />
+          <Route path="/home" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
+          <Route path="/lia" element={
+            <ProtectedRoute>
+              <Lia />
+            </ProtectedRoute>
+          } />
+          <Route path="/video-test" element={
+            <ProtectedRoute>
+              <VideoTest />
+            </ProtectedRoute>
+          } />
+          <Route path="/model-test" element={
+            <ProtectedRoute>
+              <ModelTest />
+            </ProtectedRoute>
+          } />
         </Routes>
       </div>
     </Router>

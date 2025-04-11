@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import '../App.css'; // Remonte d'un niveau
 import './Auth.css';
 import logo from '../assets/logo.svg'; // Si votre logo est dans src
@@ -11,6 +11,7 @@ function Auth() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -18,7 +19,9 @@ function Auth() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/home'); // Redirection après connexion réussie
+      // Rediriger vers la page d'origine ou vers /home par défaut
+      const from = location.state?.from?.pathname || '/home';
+      navigate(from, { replace: true });
     } catch (error) {
       setError('Identifiants incorrects. Veuillez réessayer.');
       console.error('Erreur de connexion:', error);
