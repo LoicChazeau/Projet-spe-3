@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
+import Modal from './Modal';
 import './Home.css';
 import woman_sunglasses from '../assets/woman-sunglasses.jpeg';
 import oakleyLogo from '../assets/logo_oakley.svg';
@@ -78,9 +82,38 @@ const newArrivals = [
 
 function Home() {
   const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
+  };
+
+  const navigate = useNavigate();
 
   return (
     <div className="home-page">
+      {/* Bouton de déconnexion */}
+      <button 
+        onClick={() => setShowLogoutModal(true)}
+        className="logout-button"
+      >
+        Déconnexion
+      </button>
+
+      {/* Modal de confirmation de déconnexion */}
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        title="Confirmation de déconnexion"
+        message="Êtes-vous sûr de vouloir vous déconnecter ?"
+      />
+
       {/* Top Banner */}
       <div className="top-banner">
         <img

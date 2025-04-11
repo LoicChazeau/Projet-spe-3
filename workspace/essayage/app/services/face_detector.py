@@ -1,10 +1,42 @@
+"""
+Service de détection faciale utilisant MediaPipe Face Mesh.
+
+Ce module fournit les fonctionnalités de détection et de suivi facial pour l'application
+d'essayage virtuel de lunettes. Il utilise MediaPipe Face Mesh pour détecter les points
+de repère du visage et calcule la position, la rotation et l'échelle des lunettes.
+
+Classes:
+    FaceDetectorService: Service principal de détection faciale.
+"""
+
 import mediapipe as mp
 import numpy as np
 from fastapi import UploadFile
 import cv2
 from ..models.face import FaceLandmarks, Point2D, Point3D, GlassesPosition
+from .kalman_filter import KalmanFilter3D
+import time
 
 class FaceDetectorService:
+    """
+    Service de détection faciale utilisant MediaPipe Face Mesh.
+    
+    Ce service gère la détection des points de repère du visage, le calcul de la position
+    des lunettes et le suivi des mouvements de la tête. Il utilise un filtre de Kalman
+    pour lisser les mouvements et maintenir le tracking.
+    
+    Attributes:
+        face_mesh: Instance de MediaPipe Face Mesh
+        kalman_filter: Filtre de Kalman pour le lissage des mouvements
+        last_position: Dernière position connue des lunettes
+        smoothing_factor: Facteur de lissage pour les mouvements
+        detection_history: Historique des détections
+        consecutive_failures: Nombre d'échecs consécutifs de détection
+        max_consecutive_failures: Nombre maximum d'échecs consécutifs tolérés
+        recovery_delay: Délai de récupération en secondes
+        last_detection_time: Temps de la dernière détection
+    """
+    
     # Points clés pour les lunettes (indices des points MediaPipe)
     # Points des yeux
     LEFT_EYE_OUTER = 33
@@ -44,63 +76,94 @@ class FaceDetectorService:
     RIGHT_CHEEK = 352
 
     def __init__(self):
+        """
+        Initialise le service de détection faciale.
+        
+        Configure MediaPipe Face Mesh avec les paramètres optimaux pour la détection
+        et le suivi en temps réel. Initialise également le filtre de Kalman et les
+        variables de suivi.
+        """
         self.face_mesh = mp.solutions.face_mesh.FaceMesh(
             static_image_mode=False,
             max_num_faces=1,
-            min_detection_confidence=0.4,
-            min_tracking_confidence=0.4,
+            min_detection_confidence=0.7,
+            min_tracking_confidence=0.7,
             refine_landmarks=True
         )
+        self.kalman_filter = KalmanFilter3D()
         self.last_position = None
-        self.smoothing_factor = 0.1
+        self.smoothing_factor = 0.05
         self.detection_history = []
         self.consecutive_failures = 0
-        self.max_consecutive_failures = 10
+        self.max_consecutive_failures = 3
+        self.recovery_delay = 0.3
+        self.last_detection_time = 0
 
     async def detect_landmarks(self, image: UploadFile) -> tuple[FaceLandmarks, GlassesPosition]:
+        """
+        Détecte les points de repère du visage dans une image.
+        
+        Args:
+            image: Fichier image à analyser
+            
+        Returns:
+            Tuple contenant les points de repère du visage et la position des lunettes
+            
+        Raises:
+            ValueError: Si aucun visage n'est détecté ou si la qualité de détection est insuffisante
+        """
         contents = await image.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return self.process_image(img)
 
     def process_image(self, img: np.ndarray) -> tuple[FaceLandmarks, GlassesPosition]:
-        # Convertir en RGB et redimensionner pour optimiser les performances
+        """
+        Traite une image pour détecter les points de repère du visage.
+        
+        Args:
+            img: Image numpy à traiter
+            
+        Returns:
+            Tuple contenant les points de repère du visage et la position des lunettes
+            
+        Raises:
+            ValueError: Si aucun visage n'est détecté ou si la qualité de détection est insuffisante
+        """
+        # Convertir en RGB
         rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         height, width = rgb_image.shape[:2]
         
-        # Redimensionner l'image pour le traitement (moins agressif)
-        scale_factor = 0.75
-        small_image = cv2.resize(rgb_image, (int(width * scale_factor), int(height * scale_factor)))
+        # Utiliser l'image en pleine résolution
+        results = self.face_mesh.process(rgb_image)
         
-        # Détecter les landmarks
-        results = self.face_mesh.process(small_image)
+        current_time = time.time()
         
         if not results.multi_face_landmarks:
             self.consecutive_failures += 1
-            if self.last_position and self.consecutive_failures < self.max_consecutive_failures:
+            if (self.last_position and 
+                self.consecutive_failures < self.max_consecutive_failures and
+                current_time - self.last_detection_time < self.recovery_delay):
                 return self._create_response_from_last_position(width, height)
             raise ValueError("No face detected in the image")
             
-        # Convertir les landmarks en coordonnées originales
+        # Réinitialiser le compteur d'échecs et mettre à jour le temps
+        self.consecutive_failures = 0
+        self.last_detection_time = current_time
+        
+        # Convertir les landmarks en Point2D
         landmarks = []
         face_landmarks = results.multi_face_landmarks[0].landmark
         
-        # Vérifier la qualité de la détection (plus permissif)
+        # Vérifier la qualité de la détection
         if not self._is_detection_quality_good(face_landmarks):
             self.consecutive_failures += 1
-            if self.last_position and self.consecutive_failures < self.max_consecutive_failures:
+            if (self.last_position and 
+                self.consecutive_failures < self.max_consecutive_failures and
+                current_time - self.last_detection_time < self.recovery_delay):
                 return self._create_response_from_last_position(width, height)
             raise ValueError("Poor face detection quality")
         
-        # Réinitialiser le compteur d'échecs
-        self.consecutive_failures = 0
-        
-        # Stocker les landmarks pour l'historique
-        self.detection_history.append(face_landmarks)
-        if len(self.detection_history) > 3:
-            self.detection_history.pop(0)
-        
-        # Convertir les landmarks en Point2D
         for landmark in face_landmarks:
             landmarks.append(Point2D(
                 x=landmark.x * width,
@@ -109,6 +172,25 @@ class FaceDetectorService:
         
         # Calculer la position des lunettes
         glasses_position = self._calculate_glasses_position(face_landmarks, width, height)
+        
+        # Mettre à jour le filtre de Kalman
+        position_array = np.array([
+            glasses_position.position.x,
+            glasses_position.position.y,
+            glasses_position.position.z
+        ])
+        
+        # Mettre à jour le filtre
+        filtered_position = self.kalman_filter.update(position_array)
+        
+        # Mettre à jour la position des lunettes
+        glasses_position.position = Point3D(
+            x=filtered_position[0],
+            y=filtered_position[1],
+            z=filtered_position[2]
+        )
+        
+        # Stocker la dernière position
         self.last_position = glasses_position
             
         return (
@@ -121,7 +203,15 @@ class FaceDetectorService:
         )
 
     def _is_detection_quality_good(self, landmarks) -> bool:
-        """Vérifie la qualité de la détection faciale"""
+        """
+        Vérifie la qualité de la détection faciale.
+        
+        Args:
+            landmarks: Points de repère détectés
+            
+        Returns:
+            True si la qualité de détection est suffisante, False sinon
+        """
         # Vérifier si les points clés sont présents
         key_points = [
             self.LEFT_EYE_OUTER, self.LEFT_EYE_INNER,
@@ -134,50 +224,28 @@ class FaceDetectorService:
             if not (0 <= point < len(landmarks)):
                 return False
         
-        # Vérifier la symétrie des yeux (plus permissif)
+        # Vérifier la symétrie des yeux
         left_eye_width = abs(landmarks[self.LEFT_EYE_OUTER].x - landmarks[self.LEFT_EYE_INNER].x)
         right_eye_width = abs(landmarks[self.RIGHT_EYE_OUTER].x - landmarks[self.RIGHT_EYE_INNER].x)
         eye_width_ratio = min(left_eye_width, right_eye_width) / max(left_eye_width, right_eye_width)
         
-        if eye_width_ratio < 0.3:
+        if eye_width_ratio < 0.2:
             return False
-        
-        # Vérifier la symétrie des sourcils (optionnel)
-        try:
-            left_eyebrow_height = abs(landmarks[self.LEFT_EYEBROW_INNER].y - landmarks[self.LEFT_EYEBROW_OUTER].y)
-            right_eyebrow_height = abs(landmarks[self.RIGHT_EYEBROW_INNER].y - landmarks[self.RIGHT_EYEBROW_OUTER].y)
-            eyebrow_height_ratio = min(left_eyebrow_height, right_eyebrow_height) / max(left_eyebrow_height, right_eyebrow_height)
-            
-            if eyebrow_height_ratio < 0.4:
-                return False
-        except:
-            pass  # Ignorer si les points des sourcils ne sont pas disponibles
-        
-        # Vérifier la symétrie des joues (optionnel)
-        try:
-            left_cheek_depth = landmarks[self.LEFT_CHEEK].z
-            right_cheek_depth = landmarks[self.RIGHT_CHEEK].z
-            cheek_depth_ratio = min(left_cheek_depth, right_cheek_depth) / max(left_cheek_depth, right_cheek_depth)
-            
-            if cheek_depth_ratio < 0.5:
-                return False
-        except:
-            pass  # Ignorer si les points des joues ne sont pas disponibles
-        
-        # Vérifier la position du nez (optionnel)
-        try:
-            nose_center_x = (landmarks[self.NOSE_LEFT].x + landmarks[self.NOSE_RIGHT].x) / 2
-            face_center_x = (landmarks[self.FACE_LEFT].x + landmarks[self.FACE_RIGHT].x) / 2
-            nose_offset = abs(nose_center_x - face_center_x)
-            
-            if nose_offset > 0.2:
-                return False
-        except:
-            pass  # Ignorer si les points du nez ne sont pas disponibles
         
         return True
 
     def _calculate_glasses_position(self, face_landmarks, width: int, height: int) -> GlassesPosition:
+        """
+        Calcule la position, la rotation et l'échelle des lunettes.
+        
+        Args:
+            face_landmarks: Points de repère du visage
+            width: Largeur de l'image
+            height: Hauteur de l'image
+            
+        Returns:
+            Position, rotation et échelle des lunettes
+        """
         # Extraire les points clés
         left_eye_outer = face_landmarks[self.LEFT_EYE_OUTER]
         left_eye_inner = face_landmarks[self.LEFT_EYE_INNER]
@@ -255,28 +323,23 @@ class FaceDetectorService:
         scale_y = scale_base * 0.4
         scale_z = scale_base * 0.6
         
-        # Appliquer le lissage si une position précédente existe
-        if self.last_position:
-            pos_x = self._smooth_value(pos_x, self.last_position.position.x)
-            pos_y = self._smooth_value(pos_y, self.last_position.position.y)
-            pos_z = self._smooth_value(pos_z, self.last_position.position.z)
-            rotation_x = self._smooth_value(rotation_x, self.last_position.rotation.x)
-            rotation_y = self._smooth_value(rotation_y, self.last_position.rotation.y)
-            rotation_z = self._smooth_value(rotation_z, self.last_position.rotation.z)
-            scale_x = self._smooth_value(scale_x, self.last_position.scale.x)
-            scale_y = self._smooth_value(scale_y, self.last_position.scale.y)
-            scale_z = self._smooth_value(scale_z, self.last_position.scale.z)
-        
         return GlassesPosition(
             position=Point3D(x=pos_x, y=pos_y, z=pos_z),
             rotation=Point3D(x=rotation_x, y=rotation_y, z=rotation_z),
             scale=Point3D(x=scale_x, y=scale_y, z=scale_z)
         )
 
-    def _smooth_value(self, current: float, previous: float) -> float:
-        return previous + (current - previous) * self.smoothing_factor
-
     def _create_response_from_last_position(self, width: int, height: int) -> tuple[FaceLandmarks, GlassesPosition]:
+        """
+        Crée une réponse avec la dernière position connue.
+        
+        Args:
+            width: Largeur de l'image
+            height: Hauteur de l'image
+            
+        Returns:
+            Tuple contenant des landmarks factices et la dernière position connue
+        """
         # Créer des landmarks factices basés sur la dernière position connue
         landmarks = [
             Point2D(x=width/2, y=height/2)  # Point central

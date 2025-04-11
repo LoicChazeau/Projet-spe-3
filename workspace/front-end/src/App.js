@@ -7,6 +7,7 @@ import Home from './components/Home';
 import Lia from './components/TryOnPage'
 import VideoTest from './pages/VideoTest';
 import ModelTest from './pages/ModelTest';
+import ProtectedRoute from './components/ProtectedRoute';
 import FaceShapePage from './components/FaceShapePage';
 
 function HomePage() {
@@ -14,7 +15,7 @@ function HomePage() {
     <header className="App-header">
       <img src={logo} className="App-logo" alt="logo" />
       <p>
-        Bvn sur notre application ! 
+        Bienvenue sur notre application ! 
       </p>
       <Link className="App-link" to="/login">
         Connexion
@@ -50,6 +51,26 @@ function App() {
           <Route path="/video-test" element={<VideoTest />} />
           <Route path="/model-test" element={<ModelTest />} />
           <Route path="/" element={<HomePage />} />
+          <Route path="/home" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } />
+          <Route path="/lia" element={
+            <ProtectedRoute>
+              <Lia />
+            </ProtectedRoute>
+          } />
+          <Route path="/video-test" element={
+            <ProtectedRoute>
+              <VideoTest />
+            </ProtectedRoute>
+          } />
+          <Route path="/model-test" element={
+            <ProtectedRoute>
+              <ModelTest />
+            </ProtectedRoute>
+          } />
         </Routes>
       </div>
     </Router>
