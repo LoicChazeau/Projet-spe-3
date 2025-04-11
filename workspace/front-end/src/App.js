@@ -7,6 +7,7 @@ import Home from './components/Home';
 import Lia from './components/TryOnPage'
 import VideoTest from './pages/VideoTest';
 import ModelTest from './pages/ModelTest';
+import FaceShapePage from './components/FaceShapePage';
 
 function HomePage() {
   return (
@@ -23,6 +24,9 @@ function HomePage() {
       </Link>
       <Link className="App-link" to="/lia">
         Lia
+      </Link>
+      <Link className="App-link" to="/face-shape">
+        Analyse de la forme du visage
       </Link>
       <Link className="App-link" to="/video-test">
         Test Vidéo
@@ -42,6 +46,7 @@ function App() {
           <Route path="/login" element={<Auth />} />
           <Route path="/home" element={<Home />} />
           <Route path="/lia" element={<Lia />} />
+          <Route path="/face-shape" element={<FaceShapePage />} />
           <Route path="/video-test" element={<VideoTest />} />
           <Route path="/model-test" element={<ModelTest />} />
           <Route path="/" element={<HomePage />} />
