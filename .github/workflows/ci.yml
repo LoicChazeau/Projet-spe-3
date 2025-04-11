@@ -11,6 +11,9 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  DOCKER_COMPOSE_FILE: infra/docker-compose.yml
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,6 +36,10 @@ jobs:
           cd infra
           docker compose up -d
 
+      - name: Run unit tests
+        run: |
+          docker exec infra-essayage-1 pytest /app/tests/unit/ -v
+
       - name: Wait for gateway to be ready
         run: |
           for i in {1..10}; do
@@ -53,6 +60,29 @@ jobs:
         run: docker exec infra-essayage-1 curl -f http://localhost:8001 || exit 1
       - name: Run test recommendation
         run: docker exec infra-recommandation-1 curl -f http://localhost:8002 || exit 1
+
+      - name: Save test logs
+        if: always()
+        run: |
+          mkdir -p logs
+          docker logs infra-essayage-1 > logs/essayage.log
+          docker logs infra-front-end-1 > logs/front-end.log
+          docker logs infra-gateway-1 > logs/gateway.log
+          docker logs infra-recommandation-1 > logs/recommandation.log
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: service-logs
+          path: logs/
+          retention-days: 5
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd infra
+          docker compose down -v
 
       - name: Create Pull Request to main
         if: github.ref == 'refs/heads/develop'
