@@ -1,3 +1,22 @@
+"""
+Tests unitaires pour le service de détection faciale.
+
+Ce module contient les tests unitaires pour vérifier le bon fonctionnement
+du service de détection faciale. Les tests couvrent l'initialisation,
+le calcul de position des lunettes et la gestion des cas d'erreur.
+
+Tests couverts :
+- Initialisation du détecteur de visage
+- Calcul de position des lunettes avec landmarks simulés
+- Détection d'absence de visage
+- Validation de la qualité de détection
+
+Cas d'erreur testés :
+- Image sans visage détecté
+- Landmarks insuffisants
+- Données invalides
+"""
+
 import pytest
 import numpy as np
 from fastapi import UploadFile
@@ -37,10 +56,19 @@ async def test_calculate_glasses_position(face_detector):
             self.z = z
     
     mock_landmarks = [MockLandmark(0, 0, 0)] * 468
-    # Définir les points des yeux
-    mock_landmarks[33] = MockLandmark(0.3, 0.4, 0.0)  # Œil gauche
-    mock_landmarks[263] = MockLandmark(0.7, 0.4, 0.0)  # Œil droit
+    # Définir les points des yeux (normalisés entre 0 et 1)
+    mock_landmarks[33] = MockLandmark(0.3, 0.4, 0)   # Œil gauche
+    mock_landmarks[263] = MockLandmark(0.7, 0.4, 0)  # Œil droit
     mock_landmarks[1] = MockLandmark(0.5, 0.6, 0.1)  # Nez
+    mock_landmarks[133] = MockLandmark(0.35, 0.4, 0)  # Œil gauche intérieur
+    mock_landmarks[362] = MockLandmark(0.65, 0.4, 0)  # Œil droit intérieur
+    mock_landmarks[168] = MockLandmark(0.5, 0.3, 0.05)  # Pont du nez
+    mock_landmarks[159] = MockLandmark(0.3, 0.38, 0)  # Œil gauche haut
+    mock_landmarks[145] = MockLandmark(0.3, 0.42, 0)  # Œil gauche bas
+    mock_landmarks[386] = MockLandmark(0.7, 0.38, 0)  # Œil droit haut
+    mock_landmarks[374] = MockLandmark(0.7, 0.42, 0)  # Œil droit bas
+    mock_landmarks[447] = MockLandmark(0.2, 0.4, 0)  # Temple gauche
+    mock_landmarks[227] = MockLandmark(0.8, 0.4, 0)  # Temple droit
     
     # Calculer la position des lunettes
     glasses_position = face_detector._calculate_glasses_position(

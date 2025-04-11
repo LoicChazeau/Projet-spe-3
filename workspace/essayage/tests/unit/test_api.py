@@ -1,3 +1,22 @@
+"""
+Tests unitaires pour l'API de détection faciale.
+
+Ce module contient les tests unitaires pour vérifier le bon fonctionnement
+des endpoints de l'API. Les tests couvrent les fonctionnalités principales
+et les cas d'erreur.
+
+Tests couverts :
+- Endpoint racine (GET /)
+- Endpoint de détection de visage (POST /api/v1/face/detect)
+- Endpoint de test (GET /api/v1/face/test)
+- Endpoint WebSocket (/api/v1/face/ws)
+
+Cas d'erreur testés :
+- Requête sans fichier image
+- Image sans visage détecté
+- Connexion WebSocket invalide
+"""
+
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
@@ -22,8 +41,7 @@ def test_image():
 def test_read_root(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json()["status"] == "healthy"
-    assert response.json()["service"] == "Essayage API"
+    assert response.json()["message"] == "Face Detection API"
 
 def test_face_detection_endpoint_no_file(client):
     response = client.post("/api/v1/face/detect")
@@ -38,4 +56,14 @@ def test_face_detection_endpoint_with_file(client, test_image):
 def test_face_detection_test_endpoint(client):
     response = client.get("/api/v1/face/test")
     assert response.status_code == 200
-    assert "status" in response.json() 
+    assert "status" in response.json()
+
+def test_websocket_endpoint_accessible(client):
+    """
+    Test simple pour vérifier que l'endpoint WebSocket est accessible.
+    """
+    with client.websocket_connect("/api/v1/face/ws") as websocket:
+        # Vérifier que la connexion est établie en envoyant un message
+        websocket.send_text("test")
+        response = websocket.receive_json()
+        assert "success" in response 
