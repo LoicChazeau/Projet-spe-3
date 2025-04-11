@@ -4,7 +4,6 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import Modal from './Modal';
 import './Home.css';
-import { Link } from 'react-router-dom';
 import woman_sunglasses from '../assets/woman-sunglasses.jpeg';
 import oakleyLogo from '../assets/logo_oakley.svg';
 import raybanLogo from '../assets/logo_ray-ban.svg';
