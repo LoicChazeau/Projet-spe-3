@@ -27,20 +27,24 @@
   
   .banner-text {
     position: absolute;
-    left: 25%;
+    left: 50%;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%);
     color: #fff;
+    text-align: center;
+    width: 80%;
+    max-width: 600px;
   }
   
   .banner-title {
     font-size: 1.8rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
   
   .banner-buttons {
     display: flex;
+    justify-content: center;
     gap: 1rem;
     margin-top: 1rem;
   }
