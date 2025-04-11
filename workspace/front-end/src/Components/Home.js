@@ -6,6 +6,7 @@ import raybanLogo from '../assets/logo_ray-ban.svg';
 import pradaLogo from '../assets/logo_prada.svg';
 import gucciLogo from '../assets/logo_gucci.svg';
 import glasses from '../assets/Lunettes_LUKKAS.svg';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Exemple de données (logos, produits)
 const brandLogos = [
@@ -76,6 +77,8 @@ const newArrivals = [
 ];
 
 function Home() {
+  const navigate = useNavigate();
+
   return (
     <div className="home-page">
       {/* Top Banner */}
@@ -87,7 +90,10 @@ function Home() {
         />
         <div className="banner-text">
           <h2 className="banner-title">Trouvez la monture qui vous ressemble</h2>
-          <button className="banner-button">Essayer Lia</button>
+          <div className="banner-buttons">
+            <button className="banner-button" onClick={() => navigate('/lia')}>Essayer Lia</button>
+            <button className="banner-button secondary" onClick={() => navigate('/face-shape')}>Analyser ma forme de visage</button>
+          </div>
         </div>
       </div>
 
