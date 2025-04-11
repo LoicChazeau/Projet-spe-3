@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import Modal from './Modal';
@@ -10,7 +10,6 @@ import raybanLogo from '../assets/logo_ray-ban.svg';
 import pradaLogo from '../assets/logo_prada.svg';
 import gucciLogo from '../assets/logo_gucci.svg';
 import glasses from '../assets/Lunettes_LUKKAS.svg';
-import { Link, useNavigate } from 'react-router-dom';
 
 // Exemple de données (logos, produits)
 const brandLogos = [
@@ -92,8 +91,6 @@ function Home() {
       console.error('Erreur lors de la déconnexion:', error);
     }
   };
-
-  const navigate = useNavigate();
 
   return (
     <div className="home-page">
