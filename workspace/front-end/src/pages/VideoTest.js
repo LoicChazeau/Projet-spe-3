@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import './VideoTest.css';
+import GlassesOverlay from '../components/GlassesOverlay';
 
 const VideoTest = () => {
   const videoRef = useRef(null);
@@ -8,6 +9,7 @@ const VideoTest = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
   const [dimensions, setDimensions] = useState({ width: 640, height: 480 });
+  const [glassesPosition, setGlassesPosition] = useState(null);
 
   useEffect(() => {
     // Initialiser la connexion WebSocket
@@ -109,11 +111,19 @@ const VideoTest = () => {
       const ctx = canvas.getContext('2d');
       const data = JSON.parse(event.data);
 
-      if (data.success && data.landmarks) {
+      if (data.success) {
         // Redessiner l'image de la vidéo
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        // Dessiner les landmarks
-        drawLandmarks(data.landmarks, ctx);
+        
+        if (data.landmarks) {
+          // Dessiner les landmarks
+          drawLandmarks(data.landmarks, ctx);
+        }
+        
+        if (data.glasses_position) {
+          // Mettre à jour la position des lunettes
+          setGlassesPosition(data.glasses_position);
+        }
       }
     };
   }, []);
@@ -149,6 +159,13 @@ const VideoTest = () => {
             transform: 'translateX(-50%)'
           }}
         />
+        {glassesPosition && (
+          <GlassesOverlay
+            glassesPosition={glassesPosition}
+            canvasWidth={dimensions.width}
+            canvasHeight={dimensions.height}
+          />
+        )}
       </div>
       <div className="status-indicator">
         Status: {isConnected ? 'Connecté' : 'Déconnecté'}
