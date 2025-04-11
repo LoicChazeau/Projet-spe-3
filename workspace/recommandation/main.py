@@ -297,3 +297,51 @@ async def analyze_image(
 @app.get("/")
 def read_root():
     return {"message": "Service Recommandation de Lunettes est opérationnel!"}
+
+@app.get("/glasses", response_model=List[Dict[str, Any]])
+def get_all_glasses(db: Session = Depends(get_db)):
+    """Récupère toutes les lunettes disponibles."""
+    try:
+        glasses = db.query(Glasses).all()
+        return [{
+            "id": glass.id,
+            "brand": glass.brand,
+            "model": glass.model,
+            "image_url": glass.image_url,
+            "category": glass.category,
+            "price": glass.price,
+            "description": glass.description,
+            "styles": [style.name for style in glass.styles]
+        } for glass in glasses]
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des lunettes: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/glasses/{category}", response_model=List[Dict[str, Any]])
+def get_glasses_by_category(category: str, db: Session = Depends(get_db)):
+    """Récupère les lunettes par catégorie."""
+    try:
+        glasses = db.query(Glasses).filter(Glasses.category == category).all()
+        return [{
+            "id": glass.id,
+            "brand": glass.brand,
+            "model": glass.model,
+            "image_url": glass.image_url,
+            "category": glass.category,
+            "price": glass.price,
+            "description": glass.description,
+            "styles": [style.name for style in glass.styles]
+        } for glass in glasses]
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des lunettes par catégorie: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/styles", response_model=List[str])
+def get_all_styles(db: Session = Depends(get_db)):
+    """Récupère tous les styles disponibles."""
+    try:
+        styles = db.query(Style).all()
+        return [style.name for style in styles]
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des styles: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
