@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './TryOnPage.css';
 import glassesImage from '../assets/Lunettes_LUKKAS.png';
+import { useNavigate } from 'react-router-dom';
 
 function TryOnPage() {
     const videoRef = useRef(null);
     const [carouselIndex, setCarouselIndex] = useState(0);
+    const navigate = useNavigate();
   
     // Tableau de montures avec leurs informations
     const frames = [
@@ -131,52 +133,58 @@ function TryOnPage() {
     }, []);
   
     return (
-      <div className="try-on-page">
-        {/* Barre du haut */}
-        <header className="top-bar">
-          <button className="back-button">←</button>
-          <button className="menu-button">…</button>
-        </header>
+      <div className="face-shape-page">
+        <button className="back-button" onClick={() => navigate('/home')}>
+          <span className="material-icons">arrow_back</span>
+        </button>
   
-        {/* Flux vidéo de la webcam */}
-        <div className="camera-container">
-          <video ref={videoRef} autoPlay className="camera-feed" />
-        </div>
-  
-        {/* Section d'affichage de la monture en essayage (celle sélectionnée) */}
-        <div className="glasses-info">
-          <div className="color-selector">
-            {colors.map((color) => (
-              <div
-                key={color.value}
-                className={`color-circle color-${color.value} ${selectedColor === color.value ? 'selected' : ''}`}
-                onClick={() => setSelectedColor(color.value)}
-              />
-            ))}
-          </div>
-          <p className="glasses-brand">{selectedFrame.brand}</p>
-          <p className="glasses-model">{selectedFrame.model}</p>
-          <p className="glasses-code">{selectedFrame.code}</p>
-          <p className="glasses-price">
-            €{selectedFrame.price} - {colors.find(c => c.value === selectedColor)?.name}
+        {/* Contenu principal */}
+        <div className="face-shape-container">
+          <h1 className="page-title">Essayage de montures</h1>
+          <p className="page-description">
+            Essayez différentes montures en utilisant votre webcam.
           </p>
-          <img
-            src={selectedFrame.glasses}
-            alt={`${selectedFrame.brand} ${selectedFrame.model}`}
-            className="glasses-thumbnail"
-/>
+  
+          {/* Flux vidéo de la webcam */}
+          <div className="camera-container">
+            <video ref={videoRef} autoPlay className="camera-feed" />
+          </div>
+  
+          {/* Section d'affichage de la monture en essayage */}
+          <div className="glasses-info">
+            <div className="color-selector">
+              {colors.map((color) => (
+                <div
+                  key={color.value}
+                  className={`color-circle color-${color.value} ${selectedColor === color.value ? 'selected' : ''}`}
+                  onClick={() => setSelectedColor(color.value)}
+                />
+              ))}
+            </div>
+            <p className="glasses-brand">{selectedFrame.brand}</p>
+            <p className="glasses-model">{selectedFrame.model}</p>
+            <p className="glasses-code">{selectedFrame.code}</p>
+            <p className="glasses-price">
+              €{selectedFrame.price} - {colors.find(c => c.value === selectedColor)?.name}
+            </p>
+            <img
+              src={selectedFrame.glasses}
+              alt={`${selectedFrame.brand} ${selectedFrame.model}`}
+              className="glasses-thumbnail"
+            />
+          </div>
         </div>
   
         {/* Carousel avec flèches de navigation */}
         <div className="frame-carousel-container">
-          <button
-            className="carousel-arrow left"
-            onClick={handlePrev}
-            disabled={carouselIndex === 0}
-          >
-            ←
-          </button>
           <div className="frame-carousel">
+            <button
+              className="carousel-arrow left"
+              onClick={handlePrev}
+              disabled={carouselIndex === 0}
+            >
+              <span className="material-icons">chevron_left</span>
+            </button>
             {visibleFrames.map((frame) => (
               <div
                 key={frame.id}
@@ -196,14 +204,14 @@ function TryOnPage() {
                 </div>
               </div>
             ))}
+            <button
+              className="carousel-arrow right"
+              onClick={handleNext}
+              disabled={carouselIndex + 4 >= frames.length}
+            >
+              <span className="material-icons">chevron_right</span>
+            </button>
           </div>
-          <button
-            className="carousel-arrow right"
-            onClick={handleNext}
-            disabled={carouselIndex + 4 >= frames.length}
-          >
-            →
-          </button>
         </div>
       </div>
     );

@@ -1,218 +1,256 @@
 /* Conteneur principal */
 .try-on-page {
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    font-family: sans-serif;
-    position: relative;
     height: 100vh;
     display: flex;
     flex-direction: column;
-  }
-  
-  /* Barre du haut */
-  .top-bar {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+/* Bouton retour */
+.back-button {
+    position: absolute;
+    top: 2rem;
+    left: calc(50% - 600px + 2rem); /* Centre de la page - moitié de la largeur max + marge */
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
+.back-button .material-icons {
+    font-size: 24px;
+    color: #333;
+}
+
+/* Barre du haut */
+.top-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
     background: #fff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-  
-  .back-button,
-  .menu-button {
+}
+
+.menu-button {
     background: none;
     border: none;
-    font-size: 1.2rem;
     cursor: pointer;
-  }
-  
-  /* Conteneur vidéo (webcam) */
-  .camera-container {
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.material-icons {
+    font-size: 24px;
+    color: #333;
+}
+
+/* Conteneur principal pour la vidéo et les infos */
+.main-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 60px; /* Espace pour le bouton retour */
+}
+
+/* Conteneur vidéo (webcam) */
+.camera-container {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-  
-  .camera-feed {
-    width: 60%;
-    max-height: 70vh;
+    min-height: 500px;
+    max-width: 800px;
+}
+
+.camera-feed {
+    width: 100%;
+    max-height: 500px;
     border-radius: 8px;
     background-color: #000;
     object-fit: cover;
-  }
-  
-  /* Bloc d'informations sur la monture */
-  .glasses-info {
-    position: relative;
-    width: 600px;
-    background: #fff;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-    border-radius: 8px 8px 0 0;
-    text-align: center;
-    padding: 1rem;
-    margin: 1rem auto 0 auto;
-  }
-  
-  .color-selector {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .color-circle {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-  }
-  
-  .color-black {
-    background: #000;
-  }
-  
-  .color-brown {
-    background: #6B4E31;
-  }
-  
-  .color-blue {
-    background: #007bff;
-  }
-  
-  .glasses-brand {
-    font-weight: bold;
-    font-size: 1.2rem;
-    margin: 0.5rem 0 0;
-  }
-  
-  .glasses-model {
-    font-size: 1rem;
-    margin: 0;
-  }
-  
-  .glasses-code {
-    font-size: 0.9rem;
-    color: #666;
-    margin: 0.25rem 0;
-  }
-  
-  .glasses-price {
-    font-size: 1rem;
-    color: #007bff;
-    margin: 0.25rem 0 0.5rem;
-  }
-  
-  .glasses-thumbnail {
-    max-width: 80px;
-    margin-top: 0.5rem;
-  }
-  
-  /* Conteneur du carousel */
-  .frame-carousel-container {
-    display: flex;
-    align-items: center;
-    margin-top: 1rem;
-  }
-  
-  /* Flèches du carousel */
-  .carousel-arrow {
-    background: #007bff;
-    border: none;
-    color: #fff;
-    font-size: 1.5rem;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
-  }
-  
-  .carousel-arrow:disabled {
-    background: #ccc;
-    cursor: default;
-  }
-  
-  .carousel-arrow:hover:not(:disabled) {
-    background: #0056b3;
-  }
-  
-  /* Carousel horizontal des montures */
-  .frame-carousel {
-    display: flex;
-    justify-content: center; /* Ajouté pour centrer les éléments horizontalement */
-    overflow: hidden;
-    gap: 1rem;
-    flex: 1;
-    padding: 1rem;
-    background-color: #fff;
-  }
-  
-  /* Élément de la monture */
-  .frame-item {
-    flex: 0 0 auto;
-    width: 150px;
-    text-align: center;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 0.5rem;
-    background-color: #f7f9fc;
-  }
-  
-  .frame-info {
-    margin-top: 0.5rem;
-  }
-  
-  .frame-brand,
-  .frame-model,
-  .frame-code,
-  .frame-price {
-    margin: 0.2rem 0;
-    font-size: 0.9rem;
-    color: #333;
-  }
+}
 
-  /* Sélecteur de couleur */
+/* Bloc d'informations sur la monture */
+.glasses-info {
+    width: 300px;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: center;
+    padding: 1rem;
+}
+
 .color-selector {
     display: flex;
     justify-content: center;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
-  }
-  
-  .color-circle {
+}
+
+.color-circle {
     width: 20px;
     height: 20px;
     border-radius: 50%;
     cursor: pointer;
     transition: border 0.3s ease;
-  }
-  
-  /* Couleurs */
-  .color-black {
+    border: 2px solid transparent;
+    box-sizing: border-box;
+}
+
+.color-black {
     background: #000;
-  }
-  
-  .color-brown {
+}
+
+.color-brown {
     background: #6B4E31;
-  }
-  
-  .color-blue {
+}
+
+.color-blue {
     background: #007bff;
-  }
-  
-  /* Indicateur de sélection */
-  .color-circle.selected {
+}
+
+.glasses-brand {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin: 0.5rem 0 0;
+}
+
+.glasses-model {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.glasses-code {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0.25rem 0;
+}
+
+.glasses-price {
+    font-size: 1rem;
+    color: #007bff;
+    margin: 0.25rem 0 0.5rem;
+}
+
+.glasses-thumbnail {
+    max-width: 80px;
+    margin-top: 0.5rem;
+}
+
+/* Carousel container */
+.frame-carousel-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 2rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Flèches du carousel */
+.carousel-arrow {
+    background: #007bff;
+    border: none;
+    color: #fff;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-arrow .material-icons {
+    font-size: 28px;
+    color: #fff;
+}
+
+.carousel-arrow:disabled {
+    background: #ccc;
+    cursor: default;
+}
+
+.carousel-arrow:hover:not(:disabled) {
+    background: #0056b3;
+}
+
+/* Carousel horizontal des montures */
+.frame-carousel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    gap: 1rem;
+    flex: 1;
+    background-color: #fff;
+    max-width: 864px; /* 800px + 32px de padding */
+    margin: 0 auto;
+}
+
+/* Élément de la monture */
+.frame-item {
+    flex: 0 0 auto;
+    width: 150px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 0.5rem;
+    background-color: #f7f9fc;
+}
+
+.frame-info {
+    margin-top: 0.5rem;
+}
+
+.frame-brand,
+.frame-model,
+.frame-code,
+.frame-price {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+/* Indicateur de sélection */
+.color-circle.selected {
     border: 2px solid #007bff;
-  }
-  
-  .frame-carousel-container {
+}
+
+.frame-carousel-container {
     display: flex;
     align-items: center;
     margin-top: 1rem;
-  }
-  
-  .carousel-arrow {
+}
+
+.carousel-arrow {
     background: #007bff;
     border: none;
     color: #fff;
@@ -221,30 +259,32 @@
     cursor: pointer;
     border-radius: 4px;
     transition: background-color 0.3s ease;
-  }
-  
-  .carousel-arrow:disabled {
+}
+
+.carousel-arrow:disabled {
     background: #ccc;
     cursor: default;
-  }
-  
-  .carousel-arrow:hover:not(:disabled) {
+}
+
+.carousel-arrow:hover:not(:disabled) {
     background: #0056b3;
-  }
-  
-  /* Carousel lui-même centré */
-  .frame-carousel {
+}
+
+/* Carousel lui-même centré */
+.frame-carousel {
     display: flex;
     justify-content: center;
+    align-items: center;
     overflow: hidden;
     gap: 1rem;
     flex: 1;
-    padding: 1rem;
+    padding: 1rem 0rem 1rem 0rem;
     background-color: #fff;
-  }
-  
-  /* Élément de la monture */
-  .frame-item {
+    border-radius: 12px;
+}
+
+/* Élément de la monture */
+.frame-item {
     flex: 0 0 auto;
     width: 150px;
     text-align: center;
@@ -254,25 +294,25 @@
     background-color: #f7f9fc;
     cursor: pointer;
     transition: border 0.3s ease;
-  }
-  
-  /* Style pour la monture sélectionnée dans le carousel */
-  .frame-item.selected {
+}
+
+/* Style pour la monture sélectionnée dans le carousel */
+.frame-item.selected {
     border: 2px solid #007bff;
-  }
-  
-  /* Infos de la monture dans le carousel */
-  .frame-info {
+}
+
+/* Infos de la monture dans le carousel */
+.frame-info {
     margin-top: 0.5rem;
-  }
-  
-  .frame-brand,
-  .frame-model,
-  .frame-code,
-  .frame-price {
+}
+
+.frame-brand,
+.frame-model,
+.frame-code,
+.frame-price {
     margin: 0.2rem 0;
     font-size: 0.9rem;
     color: #333;
-  }
+}
   
   
