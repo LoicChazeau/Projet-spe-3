@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 const GlassesOverlay = ({ canvasWidth, canvasHeight }) => {
   const containerRef = useRef(null);
@@ -31,74 +30,105 @@ const GlassesOverlay = ({ canvasWidth, canvasHeight }) => {
     });
     renderer.setSize(canvasWidth, canvasHeight);
     renderer.setClearColor(0x000000, 0); // Fond transparent
+    renderer.outputColorSpace = THREE.SRGBColorSpace; // Nouvelle syntaxe
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Éclairage
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(0, 1, 1);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
 
-    // Charger le modèle 3D
-    const mtlLoader = new MTLLoader();
-    console.log('Début du chargement du modèle oculos...');
+    // Ajouter une lumière d'appoint pour les reflets
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    backLight.position.set(-1, 1, -1);
+    scene.add(backLight);
+
+    // Créer un environnement pour les reflets
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const envTexture = new THREE.CubeTextureLoader().load([
+      '/models/glasses/textures/px.jpg',
+      '/models/glasses/textures/nx.jpg',
+      '/models/glasses/textures/py.jpg',
+      '/models/glasses/textures/ny.jpg',
+      '/models/glasses/textures/pz.jpg',
+      '/models/glasses/textures/nz.jpg'
+    ]);
+    const envMap = pmremGenerator.fromCubemap(envTexture).texture;
+    scene.environment = envMap;
+    pmremGenerator.dispose();
+
+    // Charger le modèle GLTF
+    const loader = new GLTFLoader();
+    console.log('Début du chargement du modèle GLTF...');
     
-    mtlLoader.load(
-      '/models/oculos.mtl',
-      (materials) => {
-        console.log('MTL chargé avec succès');
-        materials.preload();
+    loader.load(
+      '/models/glasses/source/Glasses.gltf',
+      (gltf) => {
+        console.log('GLTF chargé avec succès');
+        const model = gltf.scene;
         
-        const objLoader = new OBJLoader();
-        objLoader.setMaterials(materials);
-        
-        objLoader.load(
-          '/models/oculos.obj',
-          (object) => {
-            console.log('OBJ chargé avec succès');
-            
-            // Centrer le modèle
-            const box = new THREE.Box3().setFromObject(object);
-            const center = box.getCenter(new THREE.Vector3());
-            object.position.sub(center);
-            
-            // Position fixe au centre
-            object.position.set(0, 0, 0);
-            
-            // Rotation pour voir les lunettes de face
-            object.rotation.set(
-              0,           // X : pas de rotation
-              Math.PI,     // Y : retourner le modèle de 180°
-              0            // Z : pas de rotation
-            );
-            
-            // Échelle avec des valeurs différentes pour chaque axe
-            object.scale.set(
-              45,  // X : largeur
-              45,  // Y : hauteur
-              30   // Z : profondeur (plus petit pour éviter la déformation des branches)
-            );
-            
-            modelRef.current = object;
-            scene.add(object);
-            console.log('Modèle ajouté à la scène');
-          },
-          (xhr) => {
-            console.log((xhr.loaded / xhr.total * 100) + '% chargé');
-          },
-          (error) => {
-            console.error('Erreur lors du chargement de l\'OBJ:', error);
+        // Appliquer les matériaux et textures
+        model.traverse((node) => {
+          if (node.isMesh) {
+            // Activer les ombres
+            node.castShadow = true;
+            node.receiveShadow = true;
+
+            // Si le matériau existe déjà
+            if (node.material) {
+              // Créer un nouveau matériau PBR
+              const material = new THREE.MeshPhysicalMaterial({
+                color: node.material.color || 0x000000,
+                metalness: 0.6,
+                roughness: 0.2,
+                clearcoat: 0.4,
+                clearcoatRoughness: 0.2,
+                envMap: envMap,
+                envMapIntensity: 1.0,
+                side: THREE.DoubleSide
+              });
+
+              // Copier les textures existantes si elles existent
+              if (node.material.map) material.map = node.material.map;
+              if (node.material.normalMap) material.normalMap = node.material.normalMap;
+              
+              node.material = material;
+            }
           }
+        });
+        
+        // Centrer le modèle
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        
+        // Position fixe au centre
+        model.position.set(0, 0, 0);
+        
+        // Rotation pour voir les lunettes de face
+        model.rotation.set(
+          0,           // X : pas de rotation
+          Math.PI,     // Y : retourner le modèle de 180°
+          0            // Z : pas de rotation
         );
+        
+        // Échelle initiale
+        model.scale.set(45, 45, 45);
+        
+        modelRef.current = model;
+        scene.add(model);
+        console.log('Modèle ajouté à la scène');
       },
       (xhr) => {
-        console.log((xhr.loaded / xhr.total * 100) + '% MTL chargé');
+        console.log((xhr.loaded / xhr.total * 100) + '% chargé');
       },
       (error) => {
-        console.error('Erreur lors du chargement du MTL:', error);
+        console.error('Erreur lors du chargement du GLTF:', error);
       }
     );
 
@@ -119,9 +149,16 @@ const GlassesOverlay = ({ canvasWidth, canvasHeight }) => {
           const object = scene.children[0];
           scene.remove(object);
           if (object.geometry) object.geometry.dispose();
-          if (object.material) object.material.dispose();
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach(material => material.dispose());
+            } else {
+              object.material.dispose();
+            }
+          }
         }
       }
+      if (envMap) envMap.dispose();
     };
   }, [canvasWidth, canvasHeight]);
 

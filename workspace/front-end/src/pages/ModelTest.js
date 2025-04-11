@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 const ModelTest = () => {
@@ -23,11 +24,19 @@ const ModelTest = () => {
   const MODELS = {
     glasses: {
       name: 'glasses',
+      type: 'obj',
       scale: 50
     },
     oculos: {
       name: 'oculos',
+      type: 'obj',
       scale: 50
+    },
+    rayban: {
+      name: 'rayban',
+      type: 'gltf',
+      path: '/models/glasses/source/Glasses.gltf',
+      scale: 45
     }
   };
 
@@ -43,60 +52,103 @@ const ModelTest = () => {
 
     setStatus(`Chargement du modèle ${modelName}...`);
 
-    const mtlLoader = new MTLLoader();
-    console.log('Chargement du MTL:', `/models/${modelName}.mtl`);
-    
-    mtlLoader.load(
-      `/models/${modelName}.mtl`,
-      (materials) => {
-        console.log('Matériaux chargés avec succès pour:', modelName);
-        setStatus(`Matériaux de ${modelName} chargés, chargement du modèle...`);
-        materials.preload();
+    const modelConfig = MODELS[modelName];
+    if (!modelConfig) {
+      console.error('Configuration du modèle non trouvée pour:', modelName);
+      setStatus(`Erreur: modèle ${modelName} non configuré`);
+      return;
+    }
 
-        const objLoader = new OBJLoader();
-        objLoader.setMaterials(materials);
-        console.log('Chargement du OBJ:', `/models/${modelName}.obj`);
+    if (modelConfig.type === 'gltf') {
+      const loader = new GLTFLoader();
+      loader.load(
+        modelConfig.path,
+        (gltf) => {
+          console.log('GLTF chargé avec succès:', modelName);
+          setStatus(`Modèle ${modelName} chargé avec succès`);
+          
+          const model = gltf.scene;
+          
+          // Centrer le modèle
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          model.position.sub(center);
 
-        objLoader.load(
-          `/models/${modelName}.obj`,
-          (object) => {
-            console.log('Objet 3D chargé avec succès:', modelName);
-            setStatus(`Modèle ${modelName} chargé avec succès`);
-            
-            // Centrer le modèle
-            const box = new THREE.Box3().setFromObject(object);
-            const center = box.getCenter(new THREE.Vector3());
-            object.position.sub(center);
+          // Échelle initiale selon le modèle
+          model.scale.setScalar(modelConfig.scale);
 
-            // Échelle initiale selon le modèle
-            const modelConfig = MODELS[modelName] || MODELS.glasses;
-            object.scale.setScalar(modelConfig.scale);
+          // Rotation initiale pour voir les lunettes de face
+          model.rotation.set(0, Math.PI, 0);
 
-            scene.add(object);
-            modelRef.current = object;
-            console.log('Modèle ajouté à la scène:', modelName);
-          },
-          (xhr) => {
-            const progress = (xhr.loaded / xhr.total * 100).toFixed(0);
-            console.log(`Progression OBJ ${modelName}:`, progress + '%');
-            setStatus(`Chargement du modèle ${modelName}: ${progress}%`);
-          },
-          (error) => {
-            console.error('Erreur détaillée lors du chargement OBJ:', error);
-            setStatus(`Erreur de chargement de ${modelName}: ${error.message}`);
-          }
-        );
-      },
-      (xhr) => {
-        const progress = (xhr.loaded / xhr.total * 100).toFixed(0);
-        console.log(`Progression MTL ${modelName}:`, progress + '%');
-        setStatus(`Chargement des matériaux de ${modelName}: ${progress}%`);
-      },
-      (error) => {
-        console.error('Erreur détaillée lors du chargement MTL:', error);
-        setStatus(`Erreur de chargement des matériaux de ${modelName}: ${error.message}`);
-      }
-    );
+          scene.add(model);
+          modelRef.current = model;
+          console.log('Modèle ajouté à la scène:', modelName);
+        },
+        (xhr) => {
+          const progress = (xhr.loaded / xhr.total * 100).toFixed(0);
+          console.log(`Progression ${modelName}:`, progress + '%');
+          setStatus(`Chargement du modèle ${modelName}: ${progress}%`);
+        },
+        (error) => {
+          console.error('Erreur lors du chargement:', error);
+          setStatus(`Erreur de chargement de ${modelName}: ${error.message}`);
+        }
+      );
+    } else {
+      const mtlLoader = new MTLLoader();
+      console.log('Chargement du MTL:', `/models/${modelName}.mtl`);
+      
+      mtlLoader.load(
+        `/models/${modelName}.mtl`,
+        (materials) => {
+          console.log('Matériaux chargés avec succès pour:', modelName);
+          setStatus(`Matériaux de ${modelName} chargés, chargement du modèle...`);
+          materials.preload();
+
+          const objLoader = new OBJLoader();
+          objLoader.setMaterials(materials);
+          console.log('Chargement du OBJ:', `/models/${modelName}.obj`);
+
+          objLoader.load(
+            `/models/${modelName}.obj`,
+            (object) => {
+              console.log('Objet 3D chargé avec succès:', modelName);
+              setStatus(`Modèle ${modelName} chargé avec succès`);
+              
+              // Centrer le modèle
+              const box = new THREE.Box3().setFromObject(object);
+              const center = box.getCenter(new THREE.Vector3());
+              object.position.sub(center);
+
+              // Échelle initiale selon le modèle
+              object.scale.setScalar(modelConfig.scale);
+
+              scene.add(object);
+              modelRef.current = object;
+              console.log('Modèle ajouté à la scène:', modelName);
+            },
+            (xhr) => {
+              const progress = (xhr.loaded / xhr.total * 100).toFixed(0);
+              console.log(`Progression OBJ ${modelName}:`, progress + '%');
+              setStatus(`Chargement du modèle ${modelName}: ${progress}%`);
+            },
+            (error) => {
+              console.error('Erreur détaillée lors du chargement OBJ:', error);
+              setStatus(`Erreur de chargement de ${modelName}: ${error.message}`);
+            }
+          );
+        },
+        (xhr) => {
+          const progress = (xhr.loaded / xhr.total * 100).toFixed(0);
+          console.log(`Progression MTL ${modelName}:`, progress + '%');
+          setStatus(`Chargement des matériaux de ${modelName}: ${progress}%`);
+        },
+        (error) => {
+          console.error('Erreur détaillée lors du chargement MTL:', error);
+          setStatus(`Erreur de chargement des matériaux de ${modelName}: ${error.message}`);
+        }
+      );
+    }
   };
 
   useEffect(() => {
@@ -176,13 +228,28 @@ const ModelTest = () => {
       window.removeEventListener('resize', handleResize);
       containerRef.current?.removeChild(renderer.domElement);
     };
-  }, [controls]); // Ajout de controls comme dépendance
+  }, []);
+
+  // Effet pour gérer les changements de contrôles et de modèle
+  useEffect(() => {
+    if (modelRef.current) {
+      modelRef.current.scale.setScalar(controls.scale * 50);
+      modelRef.current.rotation.set(
+        controls.rotationX * Math.PI,
+        controls.rotationY * Math.PI,
+        controls.rotationZ * Math.PI
+      );
+      modelRef.current.position.set(
+        controls.positionX * 10,
+        controls.positionY * 10,
+        controls.positionZ * 10
+      );
+    }
+  }, [controls]);
 
   // Effet pour gérer le changement de modèle
   useEffect(() => {
-    console.log('selectedModel a changé:', selectedModel);
     if (sceneRef.current) {
-      console.log('Appel de loadModel avec:', selectedModel);
       loadModel(sceneRef.current, selectedModel);
     }
   }, [selectedModel]);
@@ -216,6 +283,9 @@ const ModelTest = () => {
             </button>
             <button onClick={() => setSelectedModel('oculos')}>
               Oculos
+            </button>
+            <button onClick={() => setSelectedModel('rayban')}>
+              Rayban
             </button>
             <button onClick={() => {
               setControls({
