@@ -100,3 +100,7 @@ jobs:
           branch: feature/auto-pr-develop-to-main
           delete-branch: true
           draft: false
+          force: true
+          path: .
+          add-paths: .
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
