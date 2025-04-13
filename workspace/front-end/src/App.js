@@ -1,38 +1,44 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import logo from './assets/logo.svg';
-import './App.css';
-import Auth from './Components/Auth';
-import Home from './Components/Home';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Box from '@mui/material/Box';
 
-function HomePage() {
-  return (
-    <header className="App-header">
-      <img src={logo} className="App-logo" alt="logo" />
-      <p>
-        Bvn sur notre application ! 
-      </p>
-      <Link className="App-link" to="/login">
-        Connexion
-      </Link>
-      <Link className="App-link" to="/login">
-        Home
-      </Link>
-    </header>
-  );
-}
+// Components
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import TryOn from './pages/TryOn';
+import Recommendations from './pages/Recommendations';
+
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
+    },
+  },
+});
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/login" element={<Auth />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/" element={<HomePage />} />
-        </Routes>
-      </div>
-    </Router>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <Navbar />
+          <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/try-on" element={<TryOn />} />
+              <Route path="/recommendations" element={<Recommendations />} />
+            </Routes>
+          </Box>
+        </Box>
+      </Router>
+    </ThemeProvider>
   );
 }
 
