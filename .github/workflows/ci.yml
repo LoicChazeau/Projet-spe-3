@@ -40,10 +40,6 @@ jobs:
           cd infra
           docker compose up -d
 
-      - name: Run unit tests
-        run: |
-          docker exec infra-essayage-1 pytest /app/tests/unit/ -v
-
       - name: Wait for gateway to be ready
         run: |
           for i in {1..10}; do
@@ -64,6 +60,10 @@ jobs:
         run: docker exec infra-essayage-1 curl -f http://localhost:8001 || exit 1
       - name: Run test recommendation
         run: docker exec infra-recommandation-1 curl -f http://localhost:8002 || exit 1
+
+      - name: Run unit tests
+        run: |
+          docker exec infra-essayage-1 pytest /app/tests/unit/ -v
 
       - name: Save test logs
         if: always()
