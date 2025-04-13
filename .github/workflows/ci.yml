@@ -90,17 +90,17 @@ jobs:
 
       - name: Create Pull Request to main
         if: github.ref == 'refs/heads/develop'
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: auto update from develop"
           title: "Auto PR: Merge develop into main"
           body: "All tests passed on develop. This PR is automatically generated."
           base: main
-          branch: feature/auto-pr-develop-to-main
+          branch: develop-to-main
           delete-branch: true
           draft: false
-          force: true
           path: .
           add-paths: .
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: true
