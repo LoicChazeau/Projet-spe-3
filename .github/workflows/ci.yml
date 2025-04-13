@@ -90,17 +90,25 @@ jobs:
 
       - name: Create Pull Request to main
         if: github.ref == 'refs/heads/develop'
-        uses: peter-evans/create-pull-request@v7
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: auto update from develop"
-          title: "Auto PR: Merge develop into main"
-          body: "All tests passed on develop. This PR is automatically generated."
-          base: main
-          branch: develop-to-main
-          delete-branch: true
-          draft: false
-          path: .
-          add-paths: .
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          signoff: true
+          script: |
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: 'develop',
+              base: 'main'
+            });
+            
+            if (prs.length === 0) {
+              await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Auto PR: Merge develop into main',
+                head: 'develop',
+                base: 'main',
+                body: 'All tests passed on develop. This PR is automatically generated.',
+                maintainer_can_modify: true
+              });
+            }
