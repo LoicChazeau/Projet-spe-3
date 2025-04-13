@@ -19,10 +19,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copier le reste du code
 COPY . .
 
-# Variables d'environnement pour PyTorch
+# Installer le package en mode développement
+RUN pip install -e .
+
+# Variables d'environnement pour PyTorch et Python
 ENV PYTHONUNBUFFERED=1
 ENV OMP_NUM_THREADS=1
 ENV MKL_NUM_THREADS=1
+ENV PYTHONPATH=/app
 
 EXPOSE 8001
 
