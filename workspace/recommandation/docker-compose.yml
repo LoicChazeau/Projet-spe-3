@@ -1,6 +1,12 @@
 version: '3.8'
 services:
   recommandation:
+    restart: unless-stopped
     build: .
     ports:
       - "8002:8002"
+    volumes:
+      - .:/app
+      - ./Images test:/app/Images test
+    environment:
+      - PYTHONPATH=/app
