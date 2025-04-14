@@ -1,6 +1,12 @@
 version: '3.8'
 services:
   recommandation:
+    restart: unless-stopped
     build: .
     ports:
       - "8002:8002"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONPATH=/app
+    command: sh -c "python -m app.database.init_db && uvicorn main:app --host 0.0.0.0 --port 8002"
