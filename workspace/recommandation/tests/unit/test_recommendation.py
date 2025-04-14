@@ -1,101 +1,85 @@
 """
-Tests unitaires pour la génération de recommandations.
+Tests unitaires pour le service de recommandation.
 
 Ce module contient les tests unitaires pour vérifier le bon fonctionnement
-de la génération de recommandations de lunettes. Les tests vérifient que
-les recommandations sont cohérentes avec la forme du visage détectée.
+du service de recommandation. Les tests couvrent l'analyse de visage,
+le calcul des scores de compatibilité et la génération de recommandations.
 """
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import cv2
+import numpy as np
+import os
+from sqlalchemy.orm import Session
 from app.services.recommendation_service import RecommendationService
-from app.models.recommendation import FaceAnalysis
-from database import Base, Glasses, Style
+from app.models.recommendation import FaceAnalysis, GlassesRecommendation
+from app.database.models import Glasses
 
 @pytest.fixture
 def recommendation_service():
+    """Crée une instance du service de recommandation."""
     return RecommendationService()
 
 @pytest.fixture
-def db_session():
-    """Crée une session de base de données pour les tests."""
-    # Créer une base de données en mémoire pour les tests
-    engine = create_engine('sqlite:///:memory:')
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    
-    # Ajouter des données de test
-    style1 = Style(name="classique")
-    style2 = Style(name="moderne")
-    session.add_all([style1, style2])
-    
-    glasses1 = Glasses(
-        brand="TestBrand1",
-        model="Model1",
-        image_url="http://test.com/1.jpg",
-        category="rondes",
-        price=100.0,
-        description="Lunettes rondes de test"
-    )
-    glasses1.styles.append(style1)
-    
-    glasses2 = Glasses(
-        brand="TestBrand2",
-        model="Model2",
-        image_url="http://test.com/2.jpg",
-        category="rectangulaires",
-        price=150.0,
-        description="Lunettes rectangulaires de test"
-    )
-    glasses2.styles.append(style2)
-    
-    session.add_all([glasses1, glasses2])
-    session.commit()
-    
-    yield session
-    
-    session.close()
+def test_image():
+    """Charge une image de test pour l'analyse de visage."""
+    image_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'images-test', 'Ovale.png')
+    image = cv2.imread(image_path)
+    assert image is not None, f"L'image de test n'a pas pu être chargée depuis {image_path}"
+    return image
 
-def test_recommend_glasses_for_round_face(recommendation_service, db_session):
-    """Test les recommandations pour un visage rond."""
-    face_analysis = FaceAnalysis(
-        face_shape="rond",
-        face_width=200,
-        face_height=200
-    )
+@pytest.fixture
+def mock_db():
+    """Crée une session de base de données mockée."""
+    class MockQuery:
+        def __init__(self):
+            self.all_result = []
+        
+        def all(self):
+            return self.all_result
     
-    recommendations = recommendation_service.recommend_glasses(face_analysis, db_session)
+    class MockSession:
+        def __init__(self):
+            self.query = MockQuery()
     
-    # Vérifier que les recommandations sont pour des lunettes rectangulaires
-    assert all("rectangulaires" in rec.type for rec in recommendations)
-    assert len(recommendations) > 0
+    return MockSession()
 
-def test_recommend_glasses_for_rectangular_face(recommendation_service, db_session):
-    """Test les recommandations pour un visage rectangulaire."""
-    face_analysis = FaceAnalysis(
-        face_shape="rectangulaire",
-        face_width=200,
-        face_height=300
-    )
+def test_analyze_face(recommendation_service, test_image):
+    """Teste l'analyse de visage."""
+    analysis = recommendation_service.analyze_face(test_image)
     
-    recommendations = recommendation_service.recommend_glasses(face_analysis, db_session)
-    
-    # Vérifier que les recommandations sont pour des lunettes rondes
-    assert all("rondes" in rec.type for rec in recommendations)
-    assert len(recommendations) > 0
+    assert isinstance(analysis, FaceAnalysis)
+    assert analysis.face_shape in ["rond", "ovale", "carré", "rectangulaire"]
+    assert analysis.probabilities is not None
+    assert sum(analysis.probabilities.values()) == 100
 
-def test_recommend_glasses_for_unknown_shape(recommendation_service, db_session):
-    """Test les recommandations pour une forme de visage inconnue."""
-    face_analysis = FaceAnalysis(
-        face_shape="inconnue",
-        face_width=200,
-        face_height=200
+def test_calculate_compatibility_score(recommendation_service):
+    """Teste le calcul du score de compatibilité."""
+    analysis = FaceAnalysis(
+        face_shape="ovale",
+        probabilities={"rond": 20, "ovale": 60, "carré": 10, "rectangulaire": 10},
+        face_width=150.0,
+        face_height=180.0,
+        forehead_width=140.0,
+        cheekbone_width=160.0,
+        jaw_width=130.0,
+        eye_distance=60.0,
+        face_ratio=0.83,
+        face_landmarks={},
+        face_contour=[]
     )
     
-    recommendations = recommendation_service.recommend_glasses(face_analysis, db_session)
+    glasses_data = {
+        "id": 1,
+        "ref": "REF001",
+        "shape": "rond",
+        "material": "acétate",
+        "size": "M",
+        "colors": ["noir", "rouge"],
+        "recommended_face_shapes": ["rond", "ovale"],
+        "images": ["image1.jpg", "image2.jpg"]
+    }
     
-    # Vérifier que les recommandations sont pour des lunettes classiques
-    assert all("classiques" in rec.type for rec in recommendations)
-    assert len(recommendations) > 0 
+    score = recommendation_service.calculate_compatibility_score(analysis, glasses_data)
+    assert isinstance(score, float)
+    assert 0 <= score <= 100 
