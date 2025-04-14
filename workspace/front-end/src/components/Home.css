@@ -1,0 +1,263 @@
+/* ----- Global container ----- */
+.home-page {
+    background-color: #f7f9fc;
+    font-family: sans-serif;
+    max-width: 1200px; /* Largeur max pour desktop */
+    margin: 0 auto;
+    padding: 1rem;
+  }
+  
+  /* ----- Top Banner ----- */
+  .top-banner {
+    position: relative;
+    width: 100%;
+    height: 300px; /* Hauteur fixe, à ajuster */
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    margin-top: 3rem;
+    background-color: #b3e0ff; /* Couleur de fond par défaut */
+  }
+  
+  .banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .banner-text {
+    position: absolute;
+    left: 25%;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+  }
+  
+  .banner-title {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .banner-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .banner-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+  
+  .banner-button:hover {
+    background-color: #0069d9;
+  }
+  
+  .banner-button.secondary {
+    background-color: transparent;
+    color: #007bff;
+    border: 2px solid #007bff;
+  }
+  
+  .banner-button.secondary:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    .banner-buttons {
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    .banner-button {
+      width: 100%;
+    }
+  }
+  
+  /* ----- Brand Logos Section ----- */
+.brand-logos-section {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+/* Rend le lien sur tout le bloc (logo + nom) */
+.brand-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  text-align: center;
+}
+
+/* Conteneur pour le logo et le nom */
+.brand-logo-container {
+  text-align: center;
+}
+
+/* Wrapper pour afficher l'image dans un cercle rond bleu */
+.brand-logo-wrapper {
+  background-color: #E3F3FB; /* Bleu */
+  width: 100px;  
+  height: 100px;
+  border-radius: 50%; /* Forme circulaire */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 0.5rem auto;
+}
+
+/* Ajustement de l'image du logo pour s'intégrer dans le cercle */
+.brand-logo {
+  max-width: 50%;
+  max-height: 50%;
+}
+
+/* ----- Brand Logos Section ----- */
+ /* .brand-logos-section {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 2rem;
+  }*/
+  
+  /*.brand-logo-container {
+    text-align: center;
+  }*/
+  
+  /*.brand-logo {
+    max-width: 60px;
+    max-height: 40px;
+    margin-bottom: 0.5rem;
+  }*/
+  
+  /* ----- New Arrivals Section ----- */
+  /*.new-arrivals-section {
+    margin-bottom: 0rem;
+  }*/
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .section-header h3 {
+    margin: 0;
+  }
+  
+  .see-all-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .see-all-link:hover {
+    text-decoration: underline;
+  }
+  
+  /* Grille de produits */
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 colonnes */
+    gap: 1rem;
+  }
+  
+  .product-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+  
+  .product-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+  }
+  
+  .product-info {
+    font-size: 0.9rem;
+  }
+  
+  .product-brand {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+  }
+  
+  .product-model {
+    margin-bottom: 0.25rem;
+    color: #333;
+  }
+  
+  .product-code {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+  
+  .product-price {
+    font-weight: bold;
+    color: #007bff;
+  }
+  
+  /* ----- Bottom Nav ----- */
+  .bottom-nav {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 0px 0px 8px 8px;
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+  }
+  
+  .nav-item {
+    cursor: pointer;
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem 0;
+  }
+  
+  .nav-item:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .logout-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .logout-button:hover {
+    background-color: #cc0000;
+  }
+  

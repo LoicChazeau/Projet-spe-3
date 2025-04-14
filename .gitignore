@@ -172,3 +172,44 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Node modules
+/node_modules
+
+# Build de production
+/build
+
+# Fichiers temporaires
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers de configuration d'environnement
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Systèmes et éditeurs
+.DS_Store
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Ignorer node_modules pour le front-end
+workspace/front-end/node_modules
+workspace/front-end/build
+
+# Fichiers de logs et d'environnement
+**/npm-debug.log*
+**/yarn-error.log*
+**/.env
+
+# Dossiers d'IDE
+.vscode
+.idea
+.DS_Store
