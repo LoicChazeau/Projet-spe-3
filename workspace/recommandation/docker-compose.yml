@@ -7,6 +7,6 @@ services:
       - "8002:8002"
     volumes:
       - .:/app
-      - ./Images test:/app/Images test
     environment:
       - PYTHONPATH=/app
+    command: sh -c "python -m app.database.init_db && uvicorn main:app --host 0.0.0.0 --port 8002"
