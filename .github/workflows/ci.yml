@@ -10,6 +10,13 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
+  repository-projects: write
+  statuses: write
+  checks: write
+
+env:
+  DOCKER_COMPOSE_FILE: infra/docker-compose.yml
 
 jobs:
   build:
@@ -54,15 +61,54 @@ jobs:
       - name: Run test recommendation
         run: docker exec infra-recommandation-1 curl -f http://localhost:8002 || exit 1
 
+      - name: Run unit tests
+        run: |
+          docker exec infra-essayage-1 pytest /app/tests/unit/ -v
+
+      - name: Save test logs
+        if: always()
+        run: |
+          mkdir -p logs
+          docker logs infra-essayage-1 > logs/essayage.log
+          docker logs infra-front-end-1 > logs/front-end.log
+          docker logs infra-gateway-1 > logs/gateway.log
+          docker logs infra-recommandation-1 > logs/recommandation.log
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-logs
+          path: logs/
+          retention-days: 5
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd infra
+          docker compose down -v
+
       - name: Create Pull Request to main
         if: github.ref == 'refs/heads/develop'
-        uses: peter-evans/create-pull-request@v4
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: auto update from develop"
-          title: "Auto PR: Merge develop into main"
-          body: "All tests passed on develop. This PR is automatically generated."
-          base: main
-          branch: feature/auto-pr-develop-to-main
-          delete-branch: true
-          draft: false
+          script: |
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: 'develop',
+              base: 'main'
+            });
+            
+            if (prs.length === 0) {
+              await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Auto PR: Merge develop into main',
+                head: 'develop',
+                base: 'main',
+                body: 'All tests passed on develop. This PR is automatically generated.',
+                maintainer_can_modify: true
+              });
+            }
