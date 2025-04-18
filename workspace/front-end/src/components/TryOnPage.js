@@ -6,26 +6,41 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // Configuration de l'API
 const API_BASE_URL = 'http://localhost:8002/api/v1/recommendation';
 
+// Fonction pour convertir les noms de couleurs en français vers des codes hexadécimaux
+const getColorHex = (colorName) => {
+  const colorMap = {
+    'Noir': '#000000',
+    'Doré': '#FFD700',
+    'Argenté': '#C0C0C0',
+    'Écaille': '#8B4513',
+    'Gris': '#808080',
+    'Brun': '#8B4513',
+    'Blanc': '#FFFFFF',
+    'Bleu': '#0000FF',
+    'Vert': '#008000',
+    'Rouge': '#FF0000',
+    'Jaune': '#FFD700',
+    'Violet': '#800080',
+    'Or': '#FFD700',
+    'Argent': '#C0C0C0'
+  };
+  
+  return colorMap[colorName] || '#CCCCCC'; // Couleur par défaut si non trouvée
+};
+
 function TryOnPage() {
     const videoRef = useRef(null);
     const [carouselIndex, setCarouselIndex] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
-    const analysisData = location.state;
+    const { faceAnalysis, recommendations, analyzedImage, isFromAnalysis } = location.state || {};
 
     // États pour les données dynamiques
     const [frames, setFrames] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedFrame, setSelectedFrame] = useState(null);
-  
-    // Couleurs disponibles pour la monture
-    const colors = [
-      { name: 'Noir', value: 'black' },
-      { name: 'Marron', value: 'brown' },
-      { name: 'Bleu', value: 'blue' }
-    ];
-    const [selectedColor, setSelectedColor] = useState(colors[0].value);
+    const [selectedColor, setSelectedColor] = useState(null);
   
     // Montures actuellement visibles dans le carousel (4 à la fois)
     const visibleFrames = frames.slice(carouselIndex, carouselIndex + 4);
@@ -39,6 +54,10 @@ function TryOnPage() {
         setFrames(data);
         if (data.length > 0) {
           setSelectedFrame(data[0]);
+          // Sélectionner la première couleur disponible par défaut
+          if (data[0].colors && data[0].colors.length > 0) {
+            setSelectedColor(data[0].colors[0]);
+          }
         }
       } catch (err) {
         setError(err.message);
@@ -47,6 +66,35 @@ function TryOnPage() {
         setLoading(false);
       }
     };
+
+    // Initialiser les données selon la source
+    useEffect(() => {
+      if (isFromAnalysis && recommendations) {
+        // Si on vient de l'analyse, utiliser les recommandations
+        setFrames(recommendations);
+        if (recommendations.length > 0) {
+          setSelectedFrame(recommendations[0]);
+          // Sélectionner la première couleur disponible par défaut
+          if (recommendations[0].colors && recommendations[0].colors.length > 0) {
+            setSelectedColor(recommendations[0].colors[0]);
+          }
+        }
+        setLoading(false);
+      } else {
+        // Sinon, charger le catalogue complet
+        fetchGlasses();
+      }
+    }, [isFromAnalysis, recommendations]);
+
+    // Mettre à jour la couleur sélectionnée quand on change de monture
+    useEffect(() => {
+      if (selectedFrame && selectedFrame.colors && selectedFrame.colors.length > 0) {
+        // Si la couleur actuelle n'existe pas dans la nouvelle monture, prendre la première couleur disponible
+        if (!selectedFrame.colors.includes(selectedColor)) {
+          setSelectedColor(selectedFrame.colors[0]);
+        }
+      }
+    }, [selectedFrame]);
   
     // Lorsqu'on change de tranche dans le carousel, si la monture sélectionnée n'est plus visible, on la met à jour
     useEffect(() => {
@@ -69,9 +117,6 @@ function TryOnPage() {
     };
   
     useEffect(() => {
-      // Charger les lunettes au montage du composant
-      fetchGlasses();
-
       // Configuration de la webcam
       navigator.mediaDevices
         .getUserMedia({ video: true })
@@ -112,10 +157,39 @@ function TryOnPage() {
   
         {/* Contenu principal */}
         <div className="face-shape-container">
-          <h1 className="page-title">Essayage de montures</h1>
+          <h1 className="page-title">
+            {isFromAnalysis ? 'Recommandations personnalisées' : 'Essayage de montures'}
+          </h1>
           <p className="page-description">
-            Essayez différentes montures en utilisant votre webcam.
+            {isFromAnalysis 
+              ? 'Voici les montures recommandées pour votre forme de visage.'
+              : 'Essayez différentes montures en utilisant votre webcam.'}
           </p>
+  
+          {/* Affichage de l'image analysée et des résultats */}
+          {isFromAnalysis && analyzedImage && faceAnalysis && (
+            <div className="analysis-summary">
+              <img src={analyzedImage} alt="Votre visage" className="analysis-thumbnail" />
+              <div className="analysis-info">
+                <h4>Analyse de votre visage</h4>
+                <p>
+                  {"Forme du visage : "}
+                  <strong>
+                    {faceAnalysis.face_shape 
+                      ? faceAnalysis.face_shape.charAt(0).toUpperCase() + faceAnalysis.face_shape.slice(1)
+                      : 'N/A'}
+                  </strong>
+                </p>
+              </div>
+              <button 
+                className="new-analysis-button" 
+                onClick={() => navigate('/face-shape')}
+              >
+                <span className="material-icons">refresh</span>
+                Nouvelle analyse
+              </button>
+            </div>
+          )}
   
           {/* Flux vidéo de la webcam */}
           <div className="camera-container">
@@ -124,20 +198,31 @@ function TryOnPage() {
   
           {/* Section d'affichage de la monture en essayage */}
           <div className="glasses-info">
-            <div className="color-selector">
-              {colors.map((color) => (
-                <div
-                  key={color.value}
-                  className={`color-circle color-${color.value} ${selectedColor === color.value ? 'selected' : ''}`}
-                  onClick={() => setSelectedColor(color.value)}
-                />
-              ))}
-            </div>
+            {selectedFrame?.colors && (
+                <div className="color-selector">
+                    <p>Couleurs disponibles :</p>
+                    <div className="color-circles">
+                        {selectedFrame.colors.map((color, index) => {
+                            const colorHex = getColorHex(color);
+                            
+                            return (
+                                <div
+                                    key={index}
+                                    className={`color-circle ${selectedColor === color ? 'selected' : ''}`}
+                                    onClick={() => setSelectedColor(color)}
+                                    style={{ backgroundColor: colorHex }}
+                                    title={color}
+                                />
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
             <p className="glasses-brand">{selectedFrame.brand}</p>
             <p className="glasses-model">{selectedFrame.model}</p>
             <p className="glasses-code">{selectedFrame.ref}</p>
             <p className="glasses-price">
-              €{selectedFrame.price} - {colors.find(c => c.value === selectedColor)?.name}
+              €{selectedFrame.price} - {selectedColor}
             </p>
             <img
               src={selectedFrame.images?.[0] || glassesImage}
@@ -185,16 +270,6 @@ function TryOnPage() {
             </button>
           </div>
         </div>
-
-        {/* Affichage des résultats bruts de l'analyse */}
-        {analysisData && (
-          <div className="analysis-results" style={{ padding: '20px', margin: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-            <h3>Résultats de l'analyse :</h3>
-            <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-              {JSON.stringify(analysisData, null, 2)}
-            </pre>
-          </div>
-        )}
       </div>
     );
   }

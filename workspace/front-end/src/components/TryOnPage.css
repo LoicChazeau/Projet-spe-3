@@ -82,16 +82,26 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 500px;
+    min-height: 400px;
     max-width: 800px;
+    width: 100%; /* Prend toute la largeur dispo */
+    height: 400px; /* Hauteur fixe (ou utiliser min-height) */
+    overflow: hidden; /* Cache ce qui dépasse */
+    position: relative; /* Contexte pour l'enfant absolu */
+    border-radius: 8px; /* Optionnel : arrondir le conteneur */
+    background-color: #000; /* Fond si la vidéo ne charge pas */
+    margin-bottom: 16px; /* Espace ajouté en dessous */
 }
 
 .camera-feed {
     width: 100%;
-    max-height: 500px;
-    border-radius: 8px;
-    background-color: #000;
-    object-fit: cover;
+    height: 100%; /* Remplit le conteneur */
+    object-fit: cover; /* Couvre la zone, peut rogner */
+    position: absolute; /* Permet un meilleur contrôle avec object-fit */
+    top: 0;
+    left: 0;
+    /* Laisser border-radius pour l'enfant si le conteneur n'est pas arrondi */
+    /* border-radius: 8px; */ 
 }
 
 /* Bloc d'informations sur la monture */
@@ -106,9 +116,18 @@
 
 .color-selector {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.color-circles {
+    display: flex;
+    flex-direction: row;
     gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    align-items: center;
+    justify-content: center;
 }
 
 .color-circle {
@@ -119,18 +138,49 @@
     transition: border 0.3s ease;
     border: 2px solid transparent;
     box-sizing: border-box;
+    position: relative;
+    display: inline-block;
 }
 
-.color-black {
-    background: #000;
+.color-circle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
-.color-brown {
-    background: #6B4E31;
+.color-circle.selected {
+    border: 2px solid #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
-.color-blue {
-    background: #007bff;
+/* Styles par défaut pour les couleurs courantes */
+.color-black { background-color: #000000; }
+.color-brown { background-color: #6B4E31; }
+.color-blue { background-color: #007bff; }
+.color-red { background-color: #dc3545; }
+.color-green { background-color: #28a745; }
+.color-yellow { background-color: #ffc107; }
+.color-purple { background-color: #6f42c1; }
+.color-pink { background-color: #e83e8c; }
+.color-gray, .color-grey { background-color: #6c757d; }
+.color-white { 
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+}
+
+/* Pour les couleurs non définies explicitement */
+.color-circle[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
 }
 
 .glasses-brand {
@@ -239,80 +289,79 @@
     color: #333;
 }
 
-/* Indicateur de sélection */
-.color-circle.selected {
-    border: 2px solid #007bff;
-}
-
-.frame-carousel-container {
+/* Styles pour la section de résumé de l'analyse */
+.analysis-summary {
     display: flex;
     align-items: center;
-    margin-top: 1rem;
+    gap: 1rem;
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box; /* Pour inclure le padding dans la largeur */
 }
 
-.carousel-arrow {
-    background: #007bff;
+.analysis-thumbnail {
+    width: 80px; /* Taille de la miniature */
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+}
+
+.analysis-info {
+    flex: 1;
+    text-align: left;
+}
+
+.analysis-info h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.analysis-info p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.new-analysis-button {
+    background-color: #007bff;
+    color: white;
     border: none;
-    color: #fff;
-    font-size: 1.5rem;
     padding: 0.5rem 1rem;
+    border-radius: 5px;
     cursor: pointer;
-    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
     transition: background-color 0.3s ease;
 }
 
-.carousel-arrow:disabled {
-    background: #ccc;
-    cursor: default;
+.new-analysis-button .material-icons {
+    font-size: 18px;
+    color: white;
 }
 
-.carousel-arrow:hover:not(:disabled) {
-    background: #0056b3;
+.new-analysis-button:hover {
+    background-color: #0056b3;
 }
 
-/* Carousel lui-même centré */
-.frame-carousel {
+/* Styles pour les états de chargement et d'erreur */
+.loading, .error {
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
-    gap: 1rem;
-    flex: 1;
-    padding: 1rem 0rem 1rem 0rem;
-    background-color: #fff;
-    border-radius: 12px;
+    height: 100vh;
+    font-size: 1.2rem;
+    color: #6c757d;
 }
 
-/* Élément de la monture */
-.frame-item {
-    flex: 0 0 auto;
-    width: 150px;
-    text-align: center;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 0.5rem;
-    background-color: #f7f9fc;
-    cursor: pointer;
-    transition: border 0.3s ease;
-}
-
-/* Style pour la monture sélectionnée dans le carousel */
-.frame-item.selected {
-    border: 2px solid #007bff;
-}
-
-/* Infos de la monture dans le carousel */
-.frame-info {
-    margin-top: 0.5rem;
-}
-
-.frame-brand,
-.frame-model,
-.frame-code,
-.frame-price {
-    margin: 0.2rem 0;
-    font-size: 0.9rem;
-    color: #333;
+.error {
+    color: #dc3545;
 }
   
   

@@ -156,7 +156,8 @@ function FaceShapePage() {
           state: { 
             faceAnalysis: data.face_analysis,
             recommendations: data.recommendations,
-            analyzedImage: uploadedImage
+            analyzedImage: uploadedImage,
+            isFromAnalysis: true // Indicateur pour TryOnPage
           } 
         });
       } else {
