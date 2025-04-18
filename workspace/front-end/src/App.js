@@ -23,6 +23,30 @@ function HomePage() {
       <Link className="App-link" to="/login">
         Connexion
       </Link>
+      <Link className="App-link" to="/home">
+        Home
+      </Link>
+      <Link className="App-link" to="/lia">
+        Lia
+      </Link>
+      <Link className="App-link" to="/face-shape">
+        Analyse de la forme du visage
+      </Link>
+      <Link className="App-link" to="/video-test">
+        Test Vidéo
+      </Link>
+      <Link className="App-link" to="/model-test">
+        Test Modèle 3D
+      </Link>
+      <Link className="App-link" to="/webgl-test">
+        Test WebGL
+      </Link>
+      <Link className="App-link" to="/gltf-test">
+        Test GLTF
+      </Link>
+      <Link className="App-link" to="/webgl-video-test">
+        Test Video WebGL
+      </Link>
     </header>
   );
 }
