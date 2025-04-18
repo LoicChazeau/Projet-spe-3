@@ -188,7 +188,7 @@ function FaceShapePage() {
                 <div className="camera-container">
                   <video ref={videoRef} autoPlay className="camera-feed" />
                   <div className="camera-controls">
-                    <button className="control-button" onClick={takePhoto}>
+                    <button className="control-button primary" onClick={takePhoto}>
                       <span className="material-icons">camera</span>
                       Prendre une photo
                     </button>
