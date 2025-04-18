@@ -130,12 +130,39 @@ function FaceShapePage() {
     }
 
     try {
-      // Ici, nous ferons l'appel à l'API de recommandation
-      // Pour l'instant, nous simulons une réponse
-      console.log("Analyse de la forme du visage en cours...");
+      // Convertir l'image base64 en Blob
+      const base64Response = await fetch(uploadedImage);
+      const blob = await base64Response.blob();
+
+      // Créer un FormData et ajouter l'image
+      const formData = new FormData();
+      formData.append('file', blob, 'image.jpg');
+
+      // Appel à l'API de recommandation
+      const response = await fetch('http://localhost:8002/api/v1/recommendation/recommend', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
       
-      // Redirection vers la page de résultats (à créer)
-      // navigate('/recommendations');
+      if (data.success) {
+        // Rediriger vers la page d'essayage avec les données
+        navigate('/lia', { 
+          state: { 
+            faceAnalysis: data.face_analysis,
+            recommendations: data.recommendations,
+            analyzedImage: uploadedImage,
+            isFromAnalysis: true // Indicateur pour TryOnPage
+          } 
+        });
+      } else {
+        throw new Error(data.message || "Erreur lors de l'analyse");
+      }
     } catch (error) {
       console.error("Erreur lors de l'analyse :", error);
       alert("Une erreur est survenue lors de l'analyse. Veuillez réessayer.");
@@ -161,7 +188,7 @@ function FaceShapePage() {
                 <div className="camera-container">
                   <video ref={videoRef} autoPlay className="camera-feed" />
                   <div className="camera-controls">
-                    <button className="control-button" onClick={takePhoto}>
+                    <button className="control-button primary" onClick={takePhoto}>
                       <span className="material-icons">camera</span>
                       Prendre une photo
                     </button>

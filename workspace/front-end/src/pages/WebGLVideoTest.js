@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { load } from '@loaders.gl/core';
 import { GLTFLoader } from '@loaders.gl/gltf';
 import './WebGLVideoTest.css';
@@ -17,6 +17,8 @@ const WebGLVideoTest = () => {
   const [error, setError] = useState(null);
   const [dimensions, setDimensions] = useState({ width: 640, height: 480 });
   const [facePosition, setFacePosition] = useState(null);
+  const [faceScale, setFaceScale] = useState(0.8);
+  const [measurements, setMeasurements] = useState([]);
 
   // Ajout d'un canvas 2D pour les landmarks
   const landmarksCanvasRef = useRef(null);
@@ -25,15 +27,18 @@ const WebGLVideoTest = () => {
   const vertexShaderSource = `
     attribute vec3 aPosition;
     attribute vec3 aNormal;
+    attribute vec2 aTexCoord;
     
     uniform mat4 uModelMatrix;
     uniform mat4 uViewMatrix;
     uniform mat4 uProjectionMatrix;
     
     varying vec3 vNormal;
+    varying vec2 vTexCoord;
     
     void main() {
       vNormal = mat3(uModelMatrix) * aNormal;
+      vTexCoord = aTexCoord;
       gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aPosition, 1.0);
     }
   `;
@@ -42,14 +47,25 @@ const WebGLVideoTest = () => {
     precision mediump float;
     
     varying vec3 vNormal;
+    varying vec2 vTexCoord;
+    
     uniform vec3 uLightDirection;
     uniform vec4 uBaseColor;
     
     void main() {
       vec3 normal = normalize(vNormal);
-      float light = dot(normal, normalize(uLightDirection));
-      vec3 color = uBaseColor.rgb * (0.5 + 0.5 * light);
-      gl_FragColor = vec4(color, uBaseColor.a);
+      
+      // Lumière ambiante plus forte
+      float ambientLight = 0.5;
+      
+      // Lumière directionnelle plus douce
+      float directionalLight = max(dot(normal, normalize(uLightDirection)), 0.0) * 0.5;
+      
+      // Combinaison des lumières
+      float totalLight = ambientLight + directionalLight;
+      
+      // Utilisation directe de la couleur de base
+      gl_FragColor = vec4(uBaseColor.rgb * totalLight, uBaseColor.a);
     }
   `;
 
@@ -57,31 +73,46 @@ const WebGLVideoTest = () => {
   useEffect(() => {
     const initWebGL = () => {
       const canvas = canvasRef.current;
-      const gl = canvas.getContext('webgl');
+      if (!canvas) {
+        console.error('[WebGL] Canvas non trouvé');
+        return;
+      }
+
+      const gl = canvas.getContext('webgl', {
+        alpha: true,
+        premultipliedAlpha: false,
+        antialias: true
+      });
+
       if (!gl) {
-        setError('WebGL non supporté');
-        return;
-      }
-      glRef.current = gl;
-
-      // Création des shaders
-      const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-      gl.shaderSource(vertexShader, vertexShaderSource);
-      gl.compileShader(vertexShader);
-
-      // Vérification de la compilation du vertex shader
-      if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-        console.error('Erreur vertex shader:', gl.getShaderInfoLog(vertexShader));
+        console.error('[WebGL] WebGL non supporté');
         return;
       }
 
-      const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-      gl.shaderSource(fragmentShader, fragmentShaderSource);
-      gl.compileShader(fragmentShader);
+      // Configuration WebGL
+      gl.enable(gl.DEPTH_TEST);
+      gl.enable(gl.CULL_FACE);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
-      // Vérification de la compilation du fragment shader
-      if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-        console.error('Erreur fragment shader:', gl.getShaderInfoLog(fragmentShader));
+      // Création et compilation des shaders
+      const createShader = (type, source) => {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          console.error('Erreur de compilation du shader:', gl.getShaderInfoLog(shader));
+          gl.deleteShader(shader);
+          return null;
+        }
+        return shader;
+      };
+
+      const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource);
+      const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+      if (!vertexShader || !fragmentShader) {
         return;
       }
 
@@ -91,104 +122,172 @@ const WebGLVideoTest = () => {
       gl.attachShader(program, fragmentShader);
       gl.linkProgram(program);
 
-      // Vérification du programme
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.error('Erreur programme WebGL:', gl.getProgramInfoLog(program));
+        console.error('Erreur de liaison du programme:', gl.getProgramInfoLog(program));
         return;
       }
 
       gl.useProgram(program);
       programRef.current = program;
-      console.log('[3D] Programme WebGL initialisé avec succès');
+      glRef.current = gl;
 
-      // Configuration WebGL
-      gl.enable(gl.DEPTH_TEST);
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      // Configuration des matrices avec des valeurs plus adaptées
+      const fieldOfView = 30 * Math.PI / 180;  // Réduction du champ de vision
+      const aspect = canvas.width / canvas.height;
+      const zNear = 0.1;
+      const zFar = 100.0;
+
+      // Matrice de projection
+      const projectionMatrix = new Float32Array(16);
+      const f = 1.0 / Math.tan(fieldOfView / 2);
+      projectionMatrix[0] = f / aspect;
+      projectionMatrix[5] = f;
+      projectionMatrix[10] = (zFar + zNear) / (zNear - zFar);
+      projectionMatrix[11] = -1;
+      projectionMatrix[14] = 2 * zFar * zNear / (zNear - zFar);
+
+      // Matrice de vue - Reculer la caméra
+      const viewMatrix = new Float32Array([
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, -10, 1  // Déplacer la caméra plus loin
+      ]);
+
+      // Matrice du modèle - Position initiale plus proche
+      const modelMatrix = new Float32Array([
+        0.1, 0, 0, 0,    // Scale X réduit à 0.1
+        0, 0.1, 0, 0,    // Scale Y réduit à 0.1
+        0, 0, 0.1, 0,    // Scale Z réduit à 0.1
+        0, 0, -2, 1      // Position Z plus proche
+      ]);
+
+      // Application des uniformes
+      const uModelMatrix = gl.getUniformLocation(program, 'uModelMatrix');
+      const uViewMatrix = gl.getUniformLocation(program, 'uViewMatrix');
+      const uProjectionMatrix = gl.getUniformLocation(program, 'uProjectionMatrix');
+      const uLightDirection = gl.getUniformLocation(program, 'uLightDirection');
+
+      gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
+      gl.uniformMatrix4fv(uViewMatrix, false, viewMatrix);
+      gl.uniformMatrix4fv(uProjectionMatrix, false, projectionMatrix);
+      gl.uniform3fv(uLightDirection, new Float32Array([0.0, -1.0, 1.0]));  // Ajustement de la direction de la lumière
+
+      console.log('[WebGL] Initialisation réussie');
     };
 
     initWebGL();
   }, []);
 
-  // Chargement du modèle GLTF
+  // Chargement du modèle
   useEffect(() => {
     const loadModel = async () => {
       try {
-        console.log('[3D] Début du chargement du modèle GLTF...');
+        console.log('Début du chargement du modèle GLTF...');
         const gltf = await load('/models/glasses/source/glasses.gltf', GLTFLoader);
-        console.log('[3D] Structure du modèle:', {
-          meshes: gltf.json.meshes?.length || 0,
-          buffers: gltf.buffers?.length || 0
-        });
+        
+        console.log('Structure GLTF:', gltf);
+        console.log('Matériaux:', gltf.json.materials);
+
+        const gl = glRef.current;
+        if (!gl) {
+          console.error('WebGL non disponible');
+          return;
+        }
 
         const meshes = gltf.json.meshes;
         if (!meshes || meshes.length === 0) {
           throw new Error('Pas de mesh trouvé dans le fichier GLTF');
         }
 
-        const gl = glRef.current;
-        const program = programRef.current;
+        // Structure pour stocker tous les buffers et informations de rendu
+        const modelBuffers = [];
 
-        if (!gl || !program) {
-          throw new Error('Contexte WebGL non initialisé');
+        // Traiter chaque mesh
+        for (const mesh of meshes) {
+          console.log('Traitement du mesh:', mesh);
+          for (const primitive of mesh.primitives) {
+            const bufferInfo = {};
+
+            // Positions
+            const positionAccessor = gltf.json.accessors[primitive.attributes.POSITION];
+            const positionBufferView = gltf.json.bufferViews[positionAccessor.bufferView];
+            const positionBuffer = gltf.buffers[positionBufferView.buffer];
+            
+            const glPositionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, glPositionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positionBuffer.arrayBuffer), gl.STATIC_DRAW);
+            bufferInfo.positionBuffer = glPositionBuffer;
+            bufferInfo.positionBufferView = positionBufferView;
+            bufferInfo.positionAccessor = positionAccessor;
+
+            // Normales
+            if (primitive.attributes.NORMAL !== undefined) {
+              const normalAccessor = gltf.json.accessors[primitive.attributes.NORMAL];
+              const normalBufferView = gltf.json.bufferViews[normalAccessor.bufferView];
+              const normalBuffer = gltf.buffers[normalBufferView.buffer];
+              
+              const glNormalBuffer = gl.createBuffer();
+              gl.bindBuffer(gl.ARRAY_BUFFER, glNormalBuffer);
+              gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalBuffer.arrayBuffer), gl.STATIC_DRAW);
+              bufferInfo.normalBuffer = glNormalBuffer;
+              bufferInfo.normalBufferView = normalBufferView;
+              bufferInfo.normalAccessor = normalAccessor;
+            }
+
+            // Indices
+            const indexAccessor = gltf.json.accessors[primitive.indices];
+            const indexBufferView = gltf.json.bufferViews[indexAccessor.bufferView];
+            const indexBuffer = gltf.buffers[indexBufferView.buffer];
+            
+            const glIndexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, glIndexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexBuffer.arrayBuffer), gl.STATIC_DRAW);
+            bufferInfo.indexBuffer = glIndexBuffer;
+            bufferInfo.indexCount = indexAccessor.count;
+
+            // Matériau
+            if (primitive.material !== undefined) {
+              const material = gltf.json.materials[primitive.material];
+              console.log('Matériau trouvé:', material);
+
+              // Attribution des couleurs en fonction du nom du matériau
+              if (material.name === 'Frame') {
+                // Monture principale en gris foncé métallique
+                bufferInfo.baseColor = [0.3, 0.3, 0.3, 1.0];
+              } else if (material.name === 'Handles') {
+                // Branches en noir mat
+                bufferInfo.baseColor = [0.1, 0.1, 0.1, 1.0];
+              } else if (material.name === 'Frame.1') {
+                // Partie transparente en gris clair semi-transparent
+                bufferInfo.baseColor = [0.9, 0.9, 0.9, 0.5];
+              } else {
+                // Couleur par défaut
+                bufferInfo.baseColor = [0.8, 0.8, 0.8, 1.0];
+              }
+              console.log(`Couleur assignée pour ${material.name}:`, bufferInfo.baseColor);
+            }
+
+            modelBuffers.push(bufferInfo);
+          }
         }
-
-        // Création des buffers pour le premier mesh
-        const mesh = meshes[0];
-        const primitive = mesh.primitives[0];
-        console.log('[3D] Primitive:', {
-          attributes: Object.keys(primitive.attributes),
-          hasIndices: primitive.indices !== undefined
-        });
-
-        // Récupération des données de position
-        const positionAccessor = gltf.json.accessors[primitive.attributes.POSITION];
-        const positionBufferView = gltf.json.bufferViews[positionAccessor.bufferView];
-        const positionBuffer = gltf.buffers[positionBufferView.buffer];
-        const positions = new Float32Array(positionBuffer.arrayBuffer);
-        console.log('[3D] Positions buffer créé:', positions.length);
-
-        const glPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, glPositionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-
-        // Récupération des normales
-        let glNormalBuffer = null;
-        if (primitive.attributes.NORMAL !== undefined) {
-          const normalAccessor = gltf.json.accessors[primitive.attributes.NORMAL];
-          const normalBufferView = gltf.json.bufferViews[normalAccessor.bufferView];
-          const normalBuffer = gltf.buffers[normalBufferView.buffer];
-          const normals = new Float32Array(normalBuffer.arrayBuffer);
-          console.log('[3D] Normales buffer créé:', normals.length);
-
-          glNormalBuffer = gl.createBuffer();
-          gl.bindBuffer(gl.ARRAY_BUFFER, glNormalBuffer);
-          gl.bufferData(gl.ARRAY_BUFFER, normals, gl.STATIC_DRAW);
-        }
-
-        // Récupération des indices
-        const indexAccessor = gltf.json.accessors[primitive.indices];
-        const indexBufferView = gltf.json.bufferViews[indexAccessor.bufferView];
-        const indexBuffer = gltf.buffers[indexBufferView.buffer];
-        const indices = new Uint16Array(indexBuffer.arrayBuffer);
-        console.log('[3D] Indices buffer créé:', indices.length);
-
-        const glIndexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, glIndexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
         modelRef.current = {
-          positionBuffer: glPositionBuffer,
-          normalBuffer: glNormalBuffer,
-          indexBuffer: glIndexBuffer,
-          indexCount: indices.length,
-          program: program
+          buffers: modelBuffers,
+          cleanup: () => {
+            modelBuffers.forEach(bufferInfo => {
+              gl.deleteBuffer(bufferInfo.positionBuffer);
+              if (bufferInfo.normalBuffer) {
+                gl.deleteBuffer(bufferInfo.normalBuffer);
+              }
+              gl.deleteBuffer(bufferInfo.indexBuffer);
+            });
+          }
         };
 
-        console.log('[3D] Modèle chargé avec succès');
       } catch (error) {
-        console.error('[3D] Erreur lors du chargement du modèle:', error);
-        setError('Erreur lors du chargement du modèle 3D');
+        console.error('Erreur détaillée lors du chargement du modèle:', error);
+        console.error('Stack trace:', error.stack);
       }
     };
 
@@ -201,22 +300,23 @@ const WebGLVideoTest = () => {
     wsRef.current = new WebSocket('ws://localhost:8001/api/v1/face/ws');
 
     wsRef.current.onopen = () => {
-      console.log('WebSocket Connected');
+      console.log('[WebSocket] Connecté avec succès');
       setIsConnected(true);
       setError(null);
     };
 
     wsRef.current.onclose = () => {
-      console.log('WebSocket Disconnected');
+      console.log('[WebSocket] Déconnecté');
       setIsConnected(false);
     };
 
     wsRef.current.onerror = (error) => {
-      console.error('WebSocket Error:', error);
+      console.error('[WebSocket] Erreur:', error);
       setError('Erreur de connexion au serveur');
     };
 
     // Initialisation Webcam
+    console.log('[Webcam] Tentative d\'accès à la webcam...');
     navigator.mediaDevices.getUserMedia({
       video: {
         width: { ideal: 640 },
@@ -224,18 +324,31 @@ const WebGLVideoTest = () => {
       }
     })
     .then(stream => {
+      console.log('[Webcam] Accès obtenu avec succès');
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
+          console.log('[Webcam] Métadonnées chargées:', {
+            width: videoRef.current.videoWidth,
+            height: videoRef.current.videoHeight
+          });
           setDimensions({
             width: videoRef.current.videoWidth,
             height: videoRef.current.videoHeight
           });
         };
+        
+        // Ajout d'un gestionnaire pour s'assurer que la vidéo démarre
+        videoRef.current.oncanplay = () => {
+          console.log('[Webcam] Vidéo prête à être lue');
+          videoRef.current.play().catch(e => {
+            console.error('[Webcam] Erreur lors du démarrage de la vidéo:', e);
+          });
+        };
       }
     })
     .catch(err => {
-      console.error('Erreur webcam:', err);
+      console.error('[Webcam] Erreur d\'accès:', err);
       setError('Impossible d\'accéder à la webcam');
     });
 
@@ -245,7 +358,10 @@ const WebGLVideoTest = () => {
         wsRef.current.close();
       }
       if (videoRef.current && videoRef.current.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject.getTracks().forEach(track => {
+          console.log('[Webcam] Arrêt de la piste:', track.label);
+          track.stop();
+        });
       }
     };
   }, []);
@@ -253,14 +369,9 @@ const WebGLVideoTest = () => {
   const drawLandmarks = (landmarks, ctx) => {
     if (!landmarks || !ctx) return;
     
-    // Effacer le canvas précédent
+    // Effacer le canvas des landmarks
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
     
-    // Dessiner l'image de la webcam
-    if (videoRef.current) {
-      ctx.drawImage(videoRef.current, 0, 0, dimensions.width, dimensions.height);
-    }
-
     // Dessiner les landmarks
     ctx.fillStyle = '#00FF00';
     landmarks.landmarks.forEach(point => {
@@ -268,36 +379,184 @@ const WebGLVideoTest = () => {
       ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
       ctx.fill();
     });
-
-    // Afficher les informations de debug
-    //console.log('Landmarks reçus:', landmarks);
   };
 
-  // Modification de la gestion des messages WebSocket
-  useEffect(() => {
-    if (!wsRef.current) return;
+  // Fonction utilitaire pour calculer la taille du visage
+  const calculateFaceScale = (landmarks) => {
+    if (!landmarks || !landmarks.landmarks || landmarks.landmarks.length === 0) {
+      return null;
+    }
 
-    wsRef.current.onmessage = (event) => {
-      const canvas = landmarksCanvasRef.current;
-      if (!canvas) return;
+    // Points pour les yeux
+    const leftEyePoints = landmarks.landmarks.slice(130, 140);
+    const rightEyePoints = landmarks.landmarks.slice(360, 370);
 
-      const ctx = canvas.getContext('2d');
-      const data = JSON.parse(event.data);
+    if (leftEyePoints.length === 0 || rightEyePoints.length === 0) {
+      return null;
+    }
 
-      if (data.success) {
-        //console.log('Message reçu du serveur:', data);
-        
-        if (data.landmarks) {
-          // Dessiner les landmarks
-          drawLandmarks(data.landmarks, ctx);
-          
-          // Mettre à jour la position du modèle 3D
-          setFacePosition(data.landmarks);
-          updateModelPosition(data.landmarks);
-        }
+    // Calculer les centres des yeux
+    const leftEyeCenter = {
+      x: leftEyePoints.reduce((sum, p) => sum + p.x, 0) / leftEyePoints.length,
+      y: leftEyePoints.reduce((sum, p) => sum + p.y, 0) / leftEyePoints.length
+    };
+
+    const rightEyeCenter = {
+      x: rightEyePoints.reduce((sum, p) => sum + p.x, 0) / rightEyePoints.length,
+      y: rightEyePoints.reduce((sum, p) => sum + p.y, 0) / rightEyePoints.length
+    };
+
+    // Points pour calculer la largeur totale du visage
+    const leftFacePoints = landmarks.landmarks.slice(0, 10);
+    const rightFacePoints = landmarks.landmarks.slice(400, 410);
+
+    // Trouver les points les plus externes du visage
+    const leftMostX = Math.min(...leftFacePoints.map(p => p.x));
+    const rightMostX = Math.max(...rightFacePoints.map(p => p.x));
+
+    // Calculer la largeur totale du visage
+    const faceWidth = rightMostX - leftMostX;
+
+    // Points pour les sourcils et le nez
+    const leftEyebrowPoints = landmarks.landmarks.slice(70, 80);
+    const rightEyebrowPoints = landmarks.landmarks.slice(300, 310);
+    const noseBottomPoints = landmarks.landmarks.slice(220, 230);
+
+    // Calculer la position moyenne des sourcils
+    const leftEyebrowY = leftEyebrowPoints.reduce((sum, p) => sum + p.y, 0) / leftEyebrowPoints.length;
+    const rightEyebrowY = rightEyebrowPoints.reduce((sum, p) => sum + p.y, 0) / rightEyebrowPoints.length;
+    const eyebrowY = Math.min(leftEyebrowY, rightEyebrowY); // Prendre le plus haut des deux sourcils
+
+    const noseY = noseBottomPoints.reduce((sum, p) => sum + p.y, 0) / noseBottomPoints.length;
+
+    // Augmenter la hauteur pour mieux couvrir la zone des yeux
+    const idealHeight = Math.abs(noseY - eyebrowY) * 1.4; // Réduit de 2.0 à 1.4
+
+    // Calculer les scales avec des facteurs plus importants
+    const widthScale = (faceWidth / dimensions.width) * 7.5;  // On garde la largeur actuelle
+    const heightScale = (idealHeight / dimensions.height) * 6; // Réduit de 8 à 6
+
+    // Appliquer un facteur minimum pour éviter que les lunettes ne soient trop petites
+    const minScale = 1.2;
+    const finalWidthScale = Math.max(widthScale, minScale);
+    const finalHeightScale = Math.max(heightScale, minScale);
+
+    return {
+      widthScale: finalWidthScale,
+      heightScale: finalHeightScale,
+      debug: {
+        faceWidth,
+        idealHeight,
+        originalWidthScale: widthScale,
+        originalHeightScale: heightScale,
+        finalWidthScale,
+        finalHeightScale
       }
     };
-  }, [dimensions]);
+  };
+
+  // Fonction de mise à jour de la position du modèle
+  const updateModelPosition = (landmarks) => {
+    if (!landmarks || !landmarks.landmarks || landmarks.landmarks.length === 0) return;
+
+    // Utiliser les landmarks des yeux pour une position plus précise
+    // Landmarks pour les yeux (indices approximatifs, à ajuster selon votre modèle)
+    const leftEyePoints = landmarks.landmarks.slice(130, 140); // Points du contour de l'œil gauche
+    const rightEyePoints = landmarks.landmarks.slice(360, 370); // Points du contour de l'œil droit
+
+    if (leftEyePoints.length === 0 || rightEyePoints.length === 0) return;
+
+    // Calculer le centre de chaque œil
+    const leftEyeCenter = {
+      x: leftEyePoints.reduce((sum, p) => sum + p.x, 0) / leftEyePoints.length,
+      y: leftEyePoints.reduce((sum, p) => sum + p.y, 0) / leftEyePoints.length
+    };
+
+    const rightEyeCenter = {
+      x: rightEyePoints.reduce((sum, p) => sum + p.x, 0) / rightEyePoints.length,
+      y: rightEyePoints.reduce((sum, p) => sum + p.y, 0) / rightEyePoints.length
+    };
+
+    // Calculer le point central entre les deux yeux
+    const centerX = (leftEyeCenter.x + rightEyeCenter.x) / 2;
+    const centerY = (leftEyeCenter.y + rightEyeCenter.y) / 2;
+
+    // Convertir les coordonnées 2D en coordonnées 3D
+    // Normaliser les coordonnées entre -1 et 1
+    const normalizedX = (centerX / dimensions.width) * 2 - 1;
+    const normalizedY = -(centerY / dimensions.height) * 2 + 1;
+
+    // Mettre à jour la position du visage
+    setFacePosition({
+      x: normalizedX,
+      y: normalizedY
+    });
+  };
+
+  // Fonction pour capturer les mesures actuelles
+  const captureMeasurement = () => {
+    const canvas = landmarksCanvasRef.current;
+    if (!canvas) return;
+
+    // Récupérer les derniers landmarks reçus
+    const lastLandmarks = wsRef.current ? wsRef.current.lastLandmarks : null;
+    
+    let eyeCenters = null;
+    if (lastLandmarks && lastLandmarks.landmarks) {
+      const leftEyePoints = lastLandmarks.landmarks.slice(130, 140);
+      const rightEyePoints = lastLandmarks.landmarks.slice(360, 370);
+      
+      if (leftEyePoints.length > 0 && rightEyePoints.length > 0) {
+        const leftEyeCenter = {
+          x: leftEyePoints.reduce((sum, p) => sum + p.x, 0) / leftEyePoints.length,
+          y: leftEyePoints.reduce((sum, p) => sum + p.y, 0) / leftEyePoints.length
+        };
+        
+        const rightEyeCenter = {
+          x: rightEyePoints.reduce((sum, p) => sum + p.x, 0) / rightEyePoints.length,
+          y: rightEyePoints.reduce((sum, p) => sum + p.y, 0) / rightEyePoints.length
+        };
+        
+        eyeCenters = {
+          left: leftEyeCenter,
+          right: rightEyeCenter,
+          center: {
+            x: (leftEyeCenter.x + rightEyeCenter.x) / 2,
+            y: (leftEyeCenter.y + rightEyeCenter.y) / 2
+          }
+        };
+      }
+    }
+
+    const measurement = {
+      timestamp: new Date().toLocaleTimeString(),
+      scale: faceScale,
+      dimensions: { ...dimensions },
+      facePosition: facePosition,
+      eyeCenters: eyeCenters,
+      normalizedPosition: eyeCenters ? {
+        x: (eyeCenters.center.x / dimensions.width) * 2 - 1,
+        y: -(eyeCenters.center.y / dimensions.height) * 2 + 1
+      } : null,
+      landmarksCount: lastLandmarks ? lastLandmarks.landmarks.length : 0,
+      debug: {
+        modelMatrix: facePosition ? [
+          faceScale.widthScale, 0, 0, 0,
+          0, faceScale.heightScale, 0, 0,
+          0, 0, faceScale.widthScale, 0,
+          facePosition.x * 2, facePosition.y * 2, -2, 1
+        ] : 'Pas de position'
+      }
+    };
+
+    setMeasurements(prev => [...prev, measurement]);
+    console.log('Mesure détaillée capturée:', measurement);
+  };
+
+  // Fonction pour effacer les mesures
+  const clearMeasurements = () => {
+    setMeasurements([]);
+  };
 
   // Modification de la fonction processVideo pour envoyer les images
   const processVideo = () => {
@@ -324,112 +583,213 @@ const WebGLVideoTest = () => {
     return () => clearInterval(interval);
   }, [isConnected]);
 
-  // Fonction de mise à jour de la position du modèle
-  const updateModelPosition = (landmarks) => {
-    if (!modelRef.current) return;
-    // TODO: Convertir les landmarks 2D en position 3D
-    // et mettre à jour la matrice de transformation du modèle
-  };
+  // Modification de la boucle de rendu pour utiliser le scale dynamique
+  const render = useCallback(() => {
+    const gl = glRef.current;
+    const model = modelRef.current;
+    const program = programRef.current;
 
-  // Modification de la boucle de rendu
-  useEffect(() => {
-    const render = () => {
-      if (!glRef.current || !modelRef.current) {
-        console.log('[3D] En attente du contexte WebGL ou du modèle...');
-        requestAnimationFrame(render);
-        return;
+    if (!gl || !model || !program) {
+      requestAnimationFrame(render);
+      return;
+    }
+
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.useProgram(program);
+
+    const sortedBuffers = [...model.buffers].sort((a, b) => {
+      const aIsTransparent = a.baseColor && a.baseColor[3] < 1.0;
+      const bIsTransparent = b.baseColor && b.baseColor[3] < 1.0;
+      return aIsTransparent - bIsTransparent;
+    });
+
+    // Utiliser les scales séparés pour la largeur et la hauteur
+    // et ajouter la position du visage avec une amplitude plus importante
+    const modelMatrix = new Float32Array([
+      faceScale.widthScale, 0, 0, 0,
+      0, faceScale.heightScale, 0, 0,
+      0, 0, faceScale.widthScale, 0,
+      facePosition ? facePosition.x * 5 : 0, 
+      facePosition ? (facePosition.y * 5) + 0.5 : 0.5, // Ajout d'un offset vertical de 0.5
+      -2, 
+      1
+    ]);
+
+    const uModelMatrix = gl.getUniformLocation(program, 'uModelMatrix');
+    gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
+
+    // Rendu de chaque partie du modèle
+    sortedBuffers.forEach(bufferInfo => {
+      // Position
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufferInfo.positionBuffer);
+      const aPosition = gl.getAttribLocation(program, 'aPosition');
+      gl.vertexAttribPointer(
+        aPosition,
+        3,
+        gl.FLOAT,
+        false,
+        bufferInfo.positionBufferView.byteStride || 0,
+        bufferInfo.positionBufferView.byteOffset || 0
+      );
+      gl.enableVertexAttribArray(aPosition);
+
+      // Normale
+      if (bufferInfo.normalBuffer) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, bufferInfo.normalBuffer);
+        const aNormal = gl.getAttribLocation(program, 'aNormal');
+        gl.vertexAttribPointer(
+          aNormal,
+          3,
+          gl.FLOAT,
+          false,
+          bufferInfo.normalBufferView.byteStride || 0,
+          bufferInfo.normalBufferView.byteOffset || 0
+        );
+        gl.enableVertexAttribArray(aNormal);
       }
 
-      const gl = glRef.current;
-      const model = modelRef.current;
+      // Indices
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferInfo.indexBuffer);
 
-      try {
-        // Clear et configuration
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        gl.useProgram(model.program);
+      // Couleur
+      const uBaseColor = gl.getUniformLocation(program, 'uBaseColor');
+      gl.uniform4fv(uBaseColor, bufferInfo.baseColor || [0.8, 0.8, 0.8, 1.0]);
 
-        // Configuration des attributs
-        const aPosition = gl.getAttribLocation(model.program, 'aPosition');
-        gl.bindBuffer(gl.ARRAY_BUFFER, model.positionBuffer);
-        gl.vertexAttribPointer(aPosition, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aPosition);
+      // Rendu
+      gl.drawElements(gl.TRIANGLES, bufferInfo.indexCount, gl.UNSIGNED_SHORT, 0);
+    });
 
-        if (model.normalBuffer) {
-          const aNormal = gl.getAttribLocation(model.program, 'aNormal');
-          gl.bindBuffer(gl.ARRAY_BUFFER, model.normalBuffer);
-          gl.vertexAttribPointer(aNormal, 3, gl.FLOAT, false, 0, 0);
-          gl.enableVertexAttribArray(aNormal);
+    requestAnimationFrame(render);
+  }, [faceScale, facePosition]);
+
+  // Démarrer la boucle de rendu
+  useEffect(() => {
+    render();
+  }, [render]);
+
+  // Modification de la gestion des messages WebSocket pour stocker les derniers landmarks
+  useEffect(() => {
+    if (!wsRef.current) return;
+
+    wsRef.current.onmessage = (event) => {
+      const canvas = landmarksCanvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const data = JSON.parse(event.data);
+
+      if (data.success && data.landmarks) {
+        // Stocker les derniers landmarks reçus
+        wsRef.current.lastLandmarks = data.landmarks;
+        
+        drawLandmarks(data.landmarks, ctx);
+        
+        const scaleData = calculateFaceScale(data.landmarks);
+        if (scaleData) {
+          setFaceScale(scaleData);
         }
 
-        // Matrices de transformation
-        const modelMatrix = new Float32Array([
-          1, 0, 0, 0,
-          0, 1, 0, 0,
-          0, 0, 1, 0,
-          0, 0, -5, 1
-        ]);
-
-        const viewMatrix = new Float32Array([
-          1, 0, 0, 0,
-          0, 1, 0, 0,
-          0, 0, 1, 0,
-          0, 0, 0, 1
-        ]);
-
-        // Matrice de projection
-        const fieldOfView = 45 * Math.PI / 180;
-        const aspect = gl.canvas.width / gl.canvas.height;
-        const zNear = 0.1;
-        const zFar = 100.0;
-        const projectionMatrix = new Float32Array(16);
-        const f = 1.0 / Math.tan(fieldOfView / 2);
-        
-        projectionMatrix[0] = f / aspect;
-        projectionMatrix[5] = f;
-        projectionMatrix[10] = (zFar + zNear) / (zNear - zFar);
-        projectionMatrix[11] = -1;
-        projectionMatrix[14] = 2 * zFar * zNear / (zNear - zFar);
-
-        // Envoi des matrices aux shaders
-        const uModelMatrix = gl.getUniformLocation(model.program, 'uModelMatrix');
-        const uViewMatrix = gl.getUniformLocation(model.program, 'uViewMatrix');
-        const uProjectionMatrix = gl.getUniformLocation(model.program, 'uProjectionMatrix');
-        const uLightDirection = gl.getUniformLocation(model.program, 'uLightDirection');
-        const uBaseColor = gl.getUniformLocation(model.program, 'uBaseColor');
-
-        gl.uniformMatrix4fv(uModelMatrix, false, modelMatrix);
-        gl.uniformMatrix4fv(uViewMatrix, false, viewMatrix);
-        gl.uniformMatrix4fv(uProjectionMatrix, false, projectionMatrix);
-        gl.uniform3fv(uLightDirection, new Float32Array([1, 1, 1]));
-        gl.uniform4fv(uBaseColor, new Float32Array([0.8, 0.8, 0.8, 1.0]));
-
-        // Rendu du modèle
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
-        gl.drawElements(gl.TRIANGLES, model.indexCount, gl.UNSIGNED_SHORT, 0);
-
-      } catch (error) {
-        console.error('[3D] Erreur lors du rendu:', error);
+        updateModelPosition(data.landmarks);
       }
-
-      requestAnimationFrame(render);
     };
-
-    render();
-  }, []);
+  }, [dimensions]);
 
   return (
     <div className="webgl-video-test-container">
       <h1>Test Lunettes 3D</h1>
       {error && <div className="error-message">{error}</div>}
-      <div className="video-container">
+      
+      <div style={{ marginBottom: '20px' }}>
+        <button 
+          onClick={captureMeasurement}
+          style={{
+            padding: '10px 20px',
+            marginRight: '10px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Capturer les mesures actuelles
+        </button>
+        <button 
+          onClick={clearMeasurements}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#f44336',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Effacer les mesures
+        </button>
+      </div>
+
+      {measurements.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          padding: '15px',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '4px',
+          maxHeight: '200px',
+          overflowY: 'auto'
+        }}>
+          <h3>Mesures capturées:</h3>
+          {measurements.map((m, index) => (
+            <div key={index} style={{ marginBottom: '10px', borderBottom: '1px solid #ddd', paddingBottom: '5px' }}>
+              <strong>Capture {index + 1} ({m.timestamp})</strong>
+              <br />
+              Scale: {m.scale.widthScale.toFixed(4)}, {m.scale.heightScale.toFixed(4)}
+              <br />
+              Dimensions: {m.dimensions.width}x{m.dimensions.height}
+              <br />
+              {m.eyeCenters && (
+                <>
+                  Centre œil gauche: ({m.eyeCenters.left.x.toFixed(1)}, {m.eyeCenters.left.y.toFixed(1)})
+                  <br />
+                  Centre œil droit: ({m.eyeCenters.right.x.toFixed(1)}, {m.eyeCenters.right.y.toFixed(1)})
+                  <br />
+                  Centre calculé: ({m.eyeCenters.center.x.toFixed(1)}, {m.eyeCenters.center.y.toFixed(1)})
+                  <br />
+                  Position normalisée: ({m.normalizedPosition.x.toFixed(3)}, {m.normalizedPosition.y.toFixed(3)})
+                  <br />
+                </>
+              )}
+              Position actuelle: ({m.facePosition?.x?.toFixed(3) || 'N/A'}, {m.facePosition?.y?.toFixed(3) || 'N/A'})
+              <br />
+              Nombre de landmarks: {m.landmarksCount}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="video-container" style={{ 
+        position: 'relative',
+        width: `${dimensions.width}px`,
+        height: `${dimensions.height}px`,
+        margin: '0 auto'
+      }}>
+        {/* Conteneur vidéo */}
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          width={dimensions.width}
-          height={dimensions.height}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
         />
+
+        {/* Canvas pour les landmarks */}
         <canvas
           ref={landmarksCanvasRef}
           width={dimensions.width}
@@ -437,11 +797,15 @@ const WebGLVideoTest = () => {
           style={{
             position: 'absolute',
             top: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 1,
+            pointerEvents: 'none'
           }}
         />
+
+        {/* Canvas WebGL pour le modèle 3D */}
         <canvas
           ref={canvasRef}
           width={dimensions.width}
@@ -449,9 +813,11 @@ const WebGLVideoTest = () => {
           style={{
             position: 'absolute',
             top: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 2
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 2,
+            pointerEvents: 'none'
           }}
         />
       </div>

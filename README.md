@@ -60,6 +60,14 @@ docker-compose up --build -d
 | Recommandation | [http://localhost:8002](http://localhost:8002) | Système de recommandation |
 | Portainer | [http://localhost:9000](http://localhost:9000) | Interface de monitoring |
 
+## 🔐 Authentification
+
+Le front-end utilise Firebase Authentication. Voici les identifiants par défaut :
+
+- **Email** : admin@optic.fr
+- **Mot de passe** : adminadmin
+
+
 ## 💻 Développement
 
 ### Utilisation du conteneur de développement

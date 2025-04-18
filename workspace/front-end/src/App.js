@@ -57,15 +57,9 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/login" element={<Auth />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/lia" element={<Lia />} />
-          <Route path="/face-shape" element={<FaceShapePage />} />
-          <Route path="/video-test" element={<VideoTest />} />
-          <Route path="/model-test" element={<ModelTest />} />
-          <Route path="/webgl-test" element={<WebGLTest />} />
-          <Route path="/gltf-test" element={<GltfTest />} />
-          <Route path="/webgl-video-test" element={<WebGLVideoTest />} />
           <Route path="/" element={<HomePage />} />
+          
+          {/* Routes protégées */}
           <Route path="/home" element={
             <ProtectedRoute>
               <Home />
@@ -76,6 +70,11 @@ function App() {
               <Lia />
             </ProtectedRoute>
           } />
+          <Route path="/face-shape" element={
+            <ProtectedRoute>
+              <FaceShapePage />
+            </ProtectedRoute>
+          } />
           <Route path="/video-test" element={
             <ProtectedRoute>
               <VideoTest />
@@ -84,6 +83,21 @@ function App() {
           <Route path="/model-test" element={
             <ProtectedRoute>
               <ModelTest />
+            </ProtectedRoute>
+          } />
+          <Route path="/webgl-test" element={
+            <ProtectedRoute>
+              <WebGLTest />
+            </ProtectedRoute>
+          } />
+          <Route path="/gltf-test" element={
+            <ProtectedRoute>
+              <GltfTest />
+            </ProtectedRoute>
+          } />
+          <Route path="/webgl-video-test" element={
+            <ProtectedRoute>
+              <WebGLVideoTest />
             </ProtectedRoute>
           } />
         </Routes>
