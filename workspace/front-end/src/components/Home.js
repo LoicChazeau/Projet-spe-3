@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -11,7 +11,10 @@ import pradaLogo from '../assets/logo_prada.svg';
 import gucciLogo from '../assets/logo_gucci.svg';
 import glasses from '../assets/Lunettes_LUKKAS.png';
 
-// Exemple de données (logos, produits)
+// Configuration de l'API
+const API_BASE_URL = 'http://localhost:8002/api/v1/recommendation';
+
+// Logos des marques
 const brandLogos = [
   { name: 'Ray-Ban', logo: raybanLogo },
   { name: 'Oakley', logo: oakleyLogo },
@@ -19,69 +22,46 @@ const brandLogos = [
   { name: 'Prada', logo: pradaLogo },
 ];
 
-const newArrivals = [
-  {
-    brand: 'Ray-Ban',
-    model: 'Wayfarer',
-    code: 'LU 2305 NODO 51/21',
-    price: 172,
-    image: glasses,
-  },
-  {
-    brand: 'Ray-Ban',
-    model: 'Wayfarer',
-    code: 'LU 2305 NODO 51/21',
-    price: 172,
-    image: glasses,
-  },
-  {
-    brand: 'Ray-Ban',
-    model: 'Wayfarer',
-    code: 'LU 2305 NODO 51/21',
-    price: 172,
-    image: glasses,
-  },
-  {
-    brand: 'Ray-Ban',
-    model: 'Wayfarer',
-    code: 'LU 2305 NODO 51/21',
-    price: 172,
-    image: glasses,
-  },
-  {
-    brand: 'Ray-Ban',
-    model: 'Wayfarer',
-    code: 'LU 2305 NODO 51/21',
-    price: 172,
-    image: glasses,
-  },
-  {
-    brand: 'Ray-Ban',
-    model: 'Wayfarer',
-    code: 'LU 2305 NODO 51/21',
-    price: 172,
-    image: glasses,
-  },
-  {
-    brand: 'Ray-Ban',
-    model: 'Wayfarer',
-    code: 'LU 2305 NODO 51/21',
-    price: 172,
-    image: glasses,
-  },
-  {
-    brand: 'Ray-Ban',
-    model: 'Wayfarer',
-    code: 'LU 2305 NODO 51/21',
-    price: 172,
-    image: glasses,
-  },
-  
-];
-
 function Home() {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [newArrivals, setNewArrivals] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fonction pour récupérer les lunettes
+  const fetchGlasses = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/glasses`);
+      if (!response.ok) throw new Error('Erreur lors de la récupération des lunettes');
+      const data = await response.json();
+      setNewArrivals(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Erreur:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fonction pour récupérer les catégories
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/categories`);
+      if (!response.ok) throw new Error('Erreur lors de la récupération des catégories');
+      const data = await response.json();
+      setCategories(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Erreur:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchGlasses();
+    fetchCategories();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -91,6 +71,14 @@ function Home() {
       console.error('Erreur lors de la déconnexion:', error);
     }
   };
+
+  if (loading) {
+    return <div className="loading">Chargement...</div>;
+  }
+
+  if (error) {
+    return <div className="error">Erreur: {error}</div>;
+  }
 
   return (
     <div className="face-shape-page">
@@ -159,14 +147,14 @@ function Home() {
             {newArrivals.map((product, index) => (
               <div key={index} className="product-card">
                 <img
-                  src={glasses}
+                  src={product.images?.[0] || glasses}
                   alt={`${product.brand} ${product.model}`}
                   className="product-image"
                 />
                 <div className="product-info">
                   <p className="product-brand">{product.brand}</p>
                   <p className="product-model">{product.model}</p>
-                  <p className="product-code">{product.code}</p>
+                  <p className="product-code">{product.ref}</p>
                   <p className="product-price">À partir de {product.price}€</p>
                 </div>
               </div>
