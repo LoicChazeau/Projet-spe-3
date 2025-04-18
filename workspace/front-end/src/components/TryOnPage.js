@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './TryOnPage.css';
 import glassesImage from '../assets/Lunettes_LUKKAS.png';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function TryOnPage() {
     const videoRef = useRef(null);
     const [carouselIndex, setCarouselIndex] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation();
+    const analysisData = location.state;
   
     // Tableau de montures avec leurs informations
     const frames = [
@@ -213,6 +215,16 @@ function TryOnPage() {
             </button>
           </div>
         </div>
+
+        {/* Affichage des résultats bruts de l'analyse */}
+        {analysisData && (
+          <div className="analysis-results" style={{ padding: '20px', margin: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+            <h3>Résultats de l'analyse :</h3>
+            <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+              {JSON.stringify(analysisData, null, 2)}
+            </pre>
+          </div>
+        )}
       </div>
     );
   }
