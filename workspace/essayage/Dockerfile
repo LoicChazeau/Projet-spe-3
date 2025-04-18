@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -19,14 +20,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copier le reste du code
 COPY . .
 
-# Copier et rendre exécutable le script d'entrée
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# Installer le package en mode développement
+RUN pip install -e .
 
-# Variables d'environnement pour PyTorch
+# Variables d'environnement pour PyTorch et Python
 ENV PYTHONUNBUFFERED=1
 ENV OMP_NUM_THREADS=1
 ENV MKL_NUM_THREADS=1
+ENV PYTHONPATH=/app
 
 EXPOSE 8001
-CMD ["/app/entrypoint.sh"]
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]

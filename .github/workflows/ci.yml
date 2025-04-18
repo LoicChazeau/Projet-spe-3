@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
+  repository-projects: write
+  statuses: write
+  checks: write
 
 env:
   DOCKER_COMPOSE_FILE: infra/docker-compose.yml
@@ -36,10 +40,6 @@ jobs:
           cd infra
           docker compose up -d
 
-      - name: Run unit tests
-        run: |
-          docker exec infra-essayage-1 pytest /app/tests/unit/ -v
-
       - name: Wait for gateway to be ready
         run: |
           for i in {1..10}; do
@@ -61,6 +61,10 @@ jobs:
       - name: Run test recommendation
         run: docker exec infra-recommandation-1 curl -f http://localhost:8002 || exit 1
 
+      - name: Run unit tests
+        run: |
+          docker exec infra-essayage-1 pytest /app/tests/unit/ -v
+
       - name: Save test logs
         if: always()
         run: |
@@ -72,7 +76,7 @@ jobs:
 
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: service-logs
           path: logs/
@@ -86,13 +90,25 @@ jobs:
 
       - name: Create Pull Request to main
         if: github.ref == 'refs/heads/develop'
-        uses: peter-evans/create-pull-request@v4
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: auto update from develop"
-          title: "Auto PR: Merge develop into main"
-          body: "All tests passed on develop. This PR is automatically generated."
-          base: main
-          branch: feature/auto-pr-develop-to-main
-          delete-branch: true
-          draft: false
+          script: |
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: 'develop',
+              base: 'main'
+            });
+            
+            if (prs.length === 0) {
+              await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Auto PR: Merge develop into main',
+                head: 'develop',
+                base: 'main',
+                body: 'All tests passed on develop. This PR is automatically generated.',
+                maintainer_can_modify: true
+              });
+            }
