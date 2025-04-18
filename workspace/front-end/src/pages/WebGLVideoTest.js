@@ -455,40 +455,102 @@ const WebGLVideoTest = () => {
     };
   };
 
-  // Modification de la gestion des messages WebSocket
-  useEffect(() => {
-    if (!wsRef.current) return;
+  // Fonction de mise à jour de la position du modèle
+  const updateModelPosition = (landmarks) => {
+    if (!landmarks || !landmarks.landmarks || landmarks.landmarks.length === 0) return;
 
-    wsRef.current.onmessage = (event) => {
-      const canvas = landmarksCanvasRef.current;
-      if (!canvas) return;
+    // Utiliser les landmarks des yeux pour une position plus précise
+    // Landmarks pour les yeux (indices approximatifs, à ajuster selon votre modèle)
+    const leftEyePoints = landmarks.landmarks.slice(130, 140); // Points du contour de l'œil gauche
+    const rightEyePoints = landmarks.landmarks.slice(360, 370); // Points du contour de l'œil droit
 
-      const ctx = canvas.getContext('2d');
-      const data = JSON.parse(event.data);
+    if (leftEyePoints.length === 0 || rightEyePoints.length === 0) return;
 
-      if (data.success && data.landmarks) {
-        drawLandmarks(data.landmarks, ctx);
-        
-        const scaleData = calculateFaceScale(data.landmarks);
-        if (scaleData) {
-          setFaceScale(scaleData);
-        }
-      }
+    // Calculer le centre de chaque œil
+    const leftEyeCenter = {
+      x: leftEyePoints.reduce((sum, p) => sum + p.x, 0) / leftEyePoints.length,
+      y: leftEyePoints.reduce((sum, p) => sum + p.y, 0) / leftEyePoints.length
     };
-  }, [dimensions]);
+
+    const rightEyeCenter = {
+      x: rightEyePoints.reduce((sum, p) => sum + p.x, 0) / rightEyePoints.length,
+      y: rightEyePoints.reduce((sum, p) => sum + p.y, 0) / rightEyePoints.length
+    };
+
+    // Calculer le point central entre les deux yeux
+    const centerX = (leftEyeCenter.x + rightEyeCenter.x) / 2;
+    const centerY = (leftEyeCenter.y + rightEyeCenter.y) / 2;
+
+    // Convertir les coordonnées 2D en coordonnées 3D
+    // Normaliser les coordonnées entre -1 et 1
+    const normalizedX = (centerX / dimensions.width) * 2 - 1;
+    const normalizedY = -(centerY / dimensions.height) * 2 + 1;
+
+    // Mettre à jour la position du visage
+    setFacePosition({
+      x: normalizedX,
+      y: normalizedY
+    });
+  };
 
   // Fonction pour capturer les mesures actuelles
   const captureMeasurement = () => {
     const canvas = landmarksCanvasRef.current;
     if (!canvas) return;
 
+    // Récupérer les derniers landmarks reçus
+    const lastLandmarks = wsRef.current ? wsRef.current.lastLandmarks : null;
+    
+    let eyeCenters = null;
+    if (lastLandmarks && lastLandmarks.landmarks) {
+      const leftEyePoints = lastLandmarks.landmarks.slice(130, 140);
+      const rightEyePoints = lastLandmarks.landmarks.slice(360, 370);
+      
+      if (leftEyePoints.length > 0 && rightEyePoints.length > 0) {
+        const leftEyeCenter = {
+          x: leftEyePoints.reduce((sum, p) => sum + p.x, 0) / leftEyePoints.length,
+          y: leftEyePoints.reduce((sum, p) => sum + p.y, 0) / leftEyePoints.length
+        };
+        
+        const rightEyeCenter = {
+          x: rightEyePoints.reduce((sum, p) => sum + p.x, 0) / rightEyePoints.length,
+          y: rightEyePoints.reduce((sum, p) => sum + p.y, 0) / rightEyePoints.length
+        };
+        
+        eyeCenters = {
+          left: leftEyeCenter,
+          right: rightEyeCenter,
+          center: {
+            x: (leftEyeCenter.x + rightEyeCenter.x) / 2,
+            y: (leftEyeCenter.y + rightEyeCenter.y) / 2
+          }
+        };
+      }
+    }
+
     const measurement = {
       timestamp: new Date().toLocaleTimeString(),
       scale: faceScale,
-      dimensions: { ...dimensions }
+      dimensions: { ...dimensions },
+      facePosition: facePosition,
+      eyeCenters: eyeCenters,
+      normalizedPosition: eyeCenters ? {
+        x: (eyeCenters.center.x / dimensions.width) * 2 - 1,
+        y: -(eyeCenters.center.y / dimensions.height) * 2 + 1
+      } : null,
+      landmarksCount: lastLandmarks ? lastLandmarks.landmarks.length : 0,
+      debug: {
+        modelMatrix: facePosition ? [
+          faceScale.widthScale, 0, 0, 0,
+          0, faceScale.heightScale, 0, 0,
+          0, 0, faceScale.widthScale, 0,
+          facePosition.x * 2, facePosition.y * 2, -2, 1
+        ] : 'Pas de position'
+      }
     };
 
     setMeasurements(prev => [...prev, measurement]);
+    console.log('Mesure détaillée capturée:', measurement);
   };
 
   // Fonction pour effacer les mesures
@@ -521,13 +583,6 @@ const WebGLVideoTest = () => {
     return () => clearInterval(interval);
   }, [isConnected]);
 
-  // Fonction de mise à jour de la position du modèle
-  const updateModelPosition = (landmarks) => {
-    if (!modelRef.current) return;
-    // TODO: Convertir les landmarks 2D en position 3D
-    // et mettre à jour la matrice de transformation du modèle
-  };
-
   // Modification de la boucle de rendu pour utiliser le scale dynamique
   const render = useCallback(() => {
     const gl = glRef.current;
@@ -549,11 +604,15 @@ const WebGLVideoTest = () => {
     });
 
     // Utiliser les scales séparés pour la largeur et la hauteur
+    // et ajouter la position du visage avec une amplitude plus importante
     const modelMatrix = new Float32Array([
       faceScale.widthScale, 0, 0, 0,
       0, faceScale.heightScale, 0, 0,
       0, 0, faceScale.widthScale, 0,
-      0, 0, -2, 1
+      facePosition ? facePosition.x * 5 : 0, 
+      facePosition ? (facePosition.y * 5) + 0.5 : 0.5, // Ajout d'un offset vertical de 0.5
+      -2, 
+      1
     ]);
 
     const uModelMatrix = gl.getUniformLocation(program, 'uModelMatrix');
@@ -601,12 +660,39 @@ const WebGLVideoTest = () => {
     });
 
     requestAnimationFrame(render);
-  }, [faceScale]);
+  }, [faceScale, facePosition]);
 
   // Démarrer la boucle de rendu
   useEffect(() => {
     render();
   }, [render]);
+
+  // Modification de la gestion des messages WebSocket pour stocker les derniers landmarks
+  useEffect(() => {
+    if (!wsRef.current) return;
+
+    wsRef.current.onmessage = (event) => {
+      const canvas = landmarksCanvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const data = JSON.parse(event.data);
+
+      if (data.success && data.landmarks) {
+        // Stocker les derniers landmarks reçus
+        wsRef.current.lastLandmarks = data.landmarks;
+        
+        drawLandmarks(data.landmarks, ctx);
+        
+        const scaleData = calculateFaceScale(data.landmarks);
+        if (scaleData) {
+          setFaceScale(scaleData);
+        }
+
+        updateModelPosition(data.landmarks);
+      }
+    };
+  }, [dimensions]);
 
   return (
     <div className="webgl-video-test-container">
@@ -660,6 +746,22 @@ const WebGLVideoTest = () => {
               Scale: {m.scale.widthScale.toFixed(4)}, {m.scale.heightScale.toFixed(4)}
               <br />
               Dimensions: {m.dimensions.width}x{m.dimensions.height}
+              <br />
+              {m.eyeCenters && (
+                <>
+                  Centre œil gauche: ({m.eyeCenters.left.x.toFixed(1)}, {m.eyeCenters.left.y.toFixed(1)})
+                  <br />
+                  Centre œil droit: ({m.eyeCenters.right.x.toFixed(1)}, {m.eyeCenters.right.y.toFixed(1)})
+                  <br />
+                  Centre calculé: ({m.eyeCenters.center.x.toFixed(1)}, {m.eyeCenters.center.y.toFixed(1)})
+                  <br />
+                  Position normalisée: ({m.normalizedPosition.x.toFixed(3)}, {m.normalizedPosition.y.toFixed(3)})
+                  <br />
+                </>
+              )}
+              Position actuelle: ({m.facePosition?.x?.toFixed(3) || 'N/A'}, {m.facePosition?.y?.toFixed(3) || 'N/A'})
+              <br />
+              Nombre de landmarks: {m.landmarksCount}
             </div>
           ))}
         </div>
