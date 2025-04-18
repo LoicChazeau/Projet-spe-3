@@ -198,37 +198,48 @@ function TryOnPage() {
   
           {/* Section d'affichage de la monture en essayage */}
           <div className="glasses-info">
-            {selectedFrame?.colors && (
-                <div className="color-selector">
+            <div className="glasses-image-container">
+              <img
+                src={selectedFrame.images?.[selectedFrame.colors.indexOf(selectedColor)] || glassesImage}
+                alt={`${selectedFrame.brand} ${selectedFrame.model} - ${selectedColor}`}
+                className="glasses-thumbnail"
+              />
+            </div>
+            <div className="glasses-details">
+              <div className="glasses-info-text">
+                <p className="glasses-brand">{selectedFrame.brand}</p>
+                <p className="glasses-model">{selectedFrame.model}</p>
+                <p className="glasses-code">{selectedFrame.ref}</p>
+                <p className="glasses-price">
+                  €{selectedFrame.price} - {selectedColor}
+                </p>
+                {selectedFrame?.colors && (
+                  <div className="color-selector">
                     <p>Couleurs disponibles :</p>
                     <div className="color-circles">
-                        {selectedFrame.colors.map((color, index) => {
-                            const colorHex = getColorHex(color);
-                            
-                            return (
-                                <div
-                                    key={index}
-                                    className={`color-circle ${selectedColor === color ? 'selected' : ''}`}
-                                    onClick={() => setSelectedColor(color)}
-                                    style={{ backgroundColor: colorHex }}
-                                    title={color}
-                                />
-                            );
-                        })}
+                      {selectedFrame.colors.map((color, index) => {
+                        const colorHex = getColorHex(color);
+                        const isWhite = color === "Blanc";
+                        const style = {
+                          backgroundColor: colorHex,
+                          ...(isWhite && { border: '1px solid #CCCCCC' })
+                        };
+                        
+                        return (
+                          <div
+                            key={index}
+                            className={`color-circle ${selectedColor === color ? 'selected' : ''}`}
+                            onClick={() => setSelectedColor(color)}
+                            style={style}
+                            title={color}
+                          />
+                        );
+                      })}
                     </div>
-                </div>
-            )}
-            <p className="glasses-brand">{selectedFrame.brand}</p>
-            <p className="glasses-model">{selectedFrame.model}</p>
-            <p className="glasses-code">{selectedFrame.ref}</p>
-            <p className="glasses-price">
-              €{selectedFrame.price} - {selectedColor}
-            </p>
-            <img
-              src={selectedFrame.images?.[0] || glassesImage}
-              alt={`${selectedFrame.brand} ${selectedFrame.model}`}
-              className="glasses-thumbnail"
-            />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
   
