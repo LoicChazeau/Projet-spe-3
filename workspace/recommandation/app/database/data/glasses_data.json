@@ -1,0 +1,433 @@
+[
+    {
+        "id": 1,
+        "ref": "RB3025",
+        "nom": "Aviator Classic",
+        "marque": "Ray-Ban",
+        "prix_de_base": 150.0,
+        "couleurs_disponibles": [
+            "Doré",
+            "Argenté",
+            "Noir"
+        ],
+        "images": [
+            "https://i.ibb.co/tkVNVJ7/1-1.png",
+            "https://i.ibb.co/dJtz1C8n/1-2.png",
+            "https://i.ibb.co/r27cPFLt/1-3.png"
+        ],
+        "forme": "Aviateur",
+        "matiere_monture": "Métal",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Ovale",
+            "Carré"
+        ],
+        "categories": [
+            "Classiques",
+            "Top ventes"
+        ],
+        "description": "Les Ray-Ban Aviator Classic sont une icône intemporelle de l’aviation. Avec leur monture métallique élégante et leurs verres de haute qualité, elles offrent un style audacieux et une protection UV optimale."
+    },
+    {
+        "id": 2,
+        "ref": "RB2140",
+        "nom": "Original Wayfarer",
+        "marque": "Ray-Ban",
+        "prix_de_base": 155.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Écaille",
+            "Gris"
+        ],
+        "images": [
+            "https://i.ibb.co/rf2hd9Qs/2-1.png",
+            "https://i.ibb.co/60VTDvKV/2-2.png",
+            "https://i.ibb.co/sJVZCyJg/2-3.png"
+        ],
+        "forme": "Wayfarer",
+        "matiere_monture": "Acétate",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Rond",
+            "Ovale"
+        ],
+        "categories": [
+            "Classiques",
+            "Top ventes"
+        ],
+        "description": "Les Ray-Ban Original Wayfarer sont un classique indémodable. Conçues en acétate robuste, elles apportent un look vintage parfait pour toutes les occasions."
+    },
+    {
+        "id": 3,
+        "ref": "RB3016",
+        "nom": "Clubmaster Classic",
+        "marque": "Ray-Ban",
+        "prix_de_base": 160.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Écaille",
+            "Brun"
+        ],
+        "images": [
+            "https://i.ibb.co/HL5C2RYC/3-1.png",
+            "https://i.ibb.co/bMWBXK4S/3-2.png",
+            "https://i.ibb.co/spnr3Pbg/3-3.png"
+        ],
+        "forme": "Clubmaster",
+        "matiere_monture": "Acétate et Métal",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Carré",
+            "Ovale"
+        ],
+        "categories": [
+            "Classiques",
+            "Top ventes"
+        ],
+        "description": "Les Ray-Ban Clubmaster Classic allient élégance rétro et modernité. Leur design semi-cerclé et leurs finitions raffinées en font un choix idéal pour les amateurs de style sophistiqué."
+    },
+    {
+        "id": 4,
+        "ref": "OO9208",
+        "nom": "Radar EV Path",
+        "marque": "Oakley",
+        "prix_de_base": 200.0,
+        "couleurs_disponibles": [
+            "Blanc",
+            "Noir",
+            "Bleu"
+        ],
+        "images": [
+            "https://i.ibb.co/0jfTL34M/4-1.png",
+            "https://i.ibb.co/VpTCKXP1/4-2.png",
+            "https://i.ibb.co/qLzHBZ1w/4-3.png"
+        ],
+        "forme": "Sport",
+        "matiere_monture": "O-Matter",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Ovale",
+            "Rectangulaire"
+        ],
+        "categories": [
+            "Sport",
+            "Nouveautés"
+        ],
+        "description": "Les Oakley Radar EV Path sont conçues pour les athlètes. Leur monture ultra-légère et leurs verres haute définition offrent une vision claire et une performance optimale sur le terrain."
+    },
+    {
+        "id": 5,
+        "ref": "OO9014",
+        "nom": "Gascan",
+        "marque": "Oakley",
+        "prix_de_base": 120.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Gris",
+            "Brun"
+        ],
+        "images": [
+            "https://i.ibb.co/h1rvbmrv/5-1.png",
+            "https://i.ibb.co/s9yBTTCZ/5-2.png",
+            "https://i.ibb.co/WvVZQ5Qh/5-3.png"
+        ],
+        "forme": "Rectangulaire",
+        "matiere_monture": "O-Matter",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Rond",
+            "Ovale"
+        ],
+        "categories": [
+            "Sport",
+            "Top ventes"
+        ],
+        "description": "Les Oakley Gascan se distinguent par leur design angulaire et leur robustesse. Conçues en O-Matter, elles offrent confort et résistance pour un usage quotidien."
+    },
+    {
+        "id": 6,
+        "ref": "GG0061S",
+        "nom": "Square Frame",
+        "marque": "Gucci",
+        "prix_de_base": 350.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Écaille",
+            "Vert"
+        ],
+        "images": [
+            "https://i.ibb.co/Cs5PYPnd/6-1.png",
+            "https://i.ibb.co/271gNvwM/6-2.png",
+            "https://i.ibb.co/DH8X6H8W/6-3.png"          
+        ],
+        "forme": "Carré",
+        "matiere_monture": "Acétate",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Rond",
+            "Ovale"
+        ],
+        "categories": [
+            "Luxe",
+            "Nouveautés"
+        ],
+        "description": "Les Gucci Square Frame allient luxe et audace. Leur monture épaisse et leurs couleurs éclatantes ajoutent une touche d’élégance moderne à votre look."
+    },
+    {
+        "id": 7,
+        "ref": "GG0062S",
+        "nom": "Round Frame",
+        "marque": "Gucci",
+        "prix_de_base": 340.0,
+        "couleurs_disponibles": [
+            "Or",
+            "Argent",
+            "Noir"
+        ],
+        "images": [
+            "https://i.ibb.co/sddxY78Q/7-1.png",
+            "https://i.ibb.co/zWzbNgpk/7-2.png",
+            "https://i.ibb.co/M58QBDT0/7-3.png"
+        ],
+        "forme": "Ronde",
+        "matiere_monture": "Métal",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Ovale",
+            "Carré"
+        ],
+        "categories": [
+            "Luxe",
+            "Classiques"
+        ],
+        "description": "Les Gucci Round Frame sont parfaites pour un style raffiné. Avec leur monture en métal finement travaillée, elles incarnent l'élégance intemporelle."
+    },
+    {
+        "id": 8,
+        "ref": "VE4361",
+        "nom": "Medusa Biggie",
+        "marque": "Versace",
+        "prix_de_base": 290.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Or"
+        ],
+        "images": [
+            "https://i.ibb.co/n8QsBpft/8-1.png",
+            "https://i.ibb.co/23P2CHYV/8-2.png"
+        ],
+        "forme": "Carré",
+        "matiere_monture": "Acétate",
+        "taille_monture": "Adulte L",
+        "forme_visage_recommandee": [
+            "Ovale",
+            "Rectangulaire"
+        ],
+        "categories": [
+            "Luxe",
+            "Top ventes"
+        ],
+        "description": "Les Versace Medusa Biggie sont un hommage à la culture pop et au luxe italien. Leur design oversize et leur emblématique logo Medusa en font un choix audacieux."
+    },
+    {
+        "id": 9,
+        "ref": "PR01OS",
+        "nom": "Minimal Baroque",
+        "marque": "Prada",
+        "prix_de_base": 370.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Doré",
+            "Rouge"
+        ],
+        "images": [
+            "https://i.ibb.co/0w4sXmz/9-1.png",
+            "https://i.ibb.co/PZ6cZqqJ/9-2.png",
+            "https://i.ibb.co/35qCcySZ/9-3.png"
+        ],
+        "forme": "Ronde",
+        "matiere_monture": "Acétate",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Ovale",
+            "Carré"
+        ],
+        "categories": [
+            "Luxe",
+            "Nouveautés"
+        ],
+        "description": "Les Prada Minimal Baroque sont une déclaration de mode. Leurs branches sculptées et leur monture arrondie apportent une touche artistique unique."
+    },
+    {
+        "id": 10,
+        "ref": "DG4383",
+        "nom": "Feminine Frame",
+        "marque": "Dolce & Gabbana",
+        "prix_de_base": 310.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Rouge",
+            "Écaille"
+        ],
+        "images": [
+            "https://i.ibb.co/Xrnnjwj0/10-1.png",
+            "https://i.ibb.co/4wQYt4kx/10-2.png",
+            "https://i.ibb.co/DHz7zh2M/10-3.png"
+        ],
+        "forme": "Papillon",
+        "matiere_monture": "Acétate",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Rond",
+            "Ovale"
+        ],
+        "categories": [
+            "Luxe",
+            "Top ventes"
+        ],
+        "description": "Les Dolce & Gabbana Feminine Frame sont conçues pour une élégance sophistiquée. Leur monture papillon sublime les traits du visage avec une touche glamour."
+    },
+    {
+        "id": 11,
+        "ref": "AO9001",
+        "nom": "Flight Gear",
+        "marque": "American Optical",
+        "prix_de_base": 230.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Doré"
+        ],
+        "images": [
+            "https://i.ibb.co/KpQCNNnN/11-1.png",
+            "https://i.ibb.co/7tC8FPNg/11-2.png"
+        ],
+        "forme": "Aviateur",
+        "matiere_monture": "Métal",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Carré",
+            "Ovale"
+        ],
+        "categories": [
+            "Classiques",
+            "Top ventes"
+        ],
+        "description": "Les American Optical Flight Gear sont inspirées des lunettes d’aviation classiques. Leur conception métallique garantit durabilité et confort exceptionnel."
+    },
+    {
+        "id": 12,
+        "ref": "MERC001",
+        "nom": "Classic Pilot",
+        "marque": "Mercedes-Benz",
+        "prix_de_base": 280.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Argent",
+            "Bleu"
+        ],
+        "images": [
+            "https://i.ibb.co/hF7KKrLq/12-1.png",
+            "https://i.ibb.co/xSNYnKmW/12-2.png",
+            "https://i.ibb.co/qM8MVJJG/12-3.png"
+        ],
+        "forme": "Aviateur",
+        "matiere_monture": "Métal",
+        "taille_monture": "Adulte L",
+        "forme_visage_recommandee": [
+            "Carré",
+            "Ovale"
+        ],
+        "categories": [
+            "Sport",
+            "Luxe"
+        ],
+        "description": "Les Mercedes-Benz Classic Pilot associent style automobile et luxe. Avec leur finition premium, elles sont parfaites pour les amateurs de design raffiné."
+    },
+    {
+        "id": 13,
+        "ref": "PITB001",
+        "nom": "Pit Boss",
+        "marque": "Oakley",
+        "prix_de_base": 400.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Gris",
+            "Brun"
+        ],
+        "images": [
+            "https://i.ibb.co/mVvD9byk/13-1.png",
+            "https://i.ibb.co/hFXpZG95/13-2.png",
+            "https://i.ibb.co/Y7zYSLys/13-3.png"
+        ],
+        "forme": "Rectangulaire",
+        "matiere_monture": "O-Matter",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Ovale",
+            "Rectangulaire"
+        ],
+        "categories": [
+            "Sport",
+            "Top ventes"
+        ],
+        "description": "Les Oakley Pit Boss incarnent la robustesse et la haute technologie. Leur monture résistante et leurs verres polarisés assurent une protection optimale."
+    },
+    {
+        "id": 14,
+        "ref": "WAY001",
+        "nom": "Mega Wayfarer",
+        "marque": "Ray-Ban",
+        "prix_de_base": 180.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Bleu",
+            "Brun"
+        ],
+        "images": [
+            "https://i.ibb.co/23sNVSHK/14-1.png",
+            "https://i.ibb.co/vvfXr52m/14-2.png",
+            "https://i.ibb.co/1tSqcLx2/14-3.png"
+        ],
+        "forme": "Wayfarer",
+        "matiere_monture": "Acétate",
+        "taille_monture": "Adulte M",
+        "forme_visage_recommandee": [
+            "Rond",
+            "Ovale"
+        ],
+        "categories": [
+            "Classiques",
+            "Nouveautés"
+        ],
+        "description": "Les Ray-Ban Super Wayfarer revisitent le modèle iconique avec une touche moderne. Un incontournable pour ceux qui recherchent un style authentique."
+    },
+    {
+        "id": 15,
+        "ref": "SPY001",
+        "nom": "Spy Monolith",
+        "marque": "Spy Optic",
+        "prix_de_base": 190.0,
+        "couleurs_disponibles": [
+            "Noir",
+            "Jaune",
+            "Violet"
+        ],
+        "images": [
+            "https://i.ibb.co/QFS7R1hF/15-1.png",
+            "https://i.ibb.co/cKh9KFr6/15-2.png",
+            "https://i.ibb.co/0pk1HrfS/15-3.png"
+        ],
+        "forme": "Sport",
+        "matiere_monture": "Acétate",
+        "taille_monture": "Adulte L",
+        "forme_visage_recommandee": [
+            "Ovale",
+            "Rectangulaire"
+        ],
+        "categories": [
+            "Sport",
+            "Top ventes"
+        ],
+        "description": "Les Spy Monolith sont conçues pour les amateurs de sport et d’aventure. Leur design enveloppant assure une protection optimale contre le soleil et le vent."
+    }
+]
